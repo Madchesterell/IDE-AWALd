@@ -1,48 +1,731 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Direktori Layanan Publik & Donasi</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KaryaSempat — Etalase Karya & Jejak PKL SMKN 4 Madiun</title>
+  
+  <!-- Font Google: Plus Jakarta Sans & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .card-hover {
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+    }
+  </style>
 </head>
-<body>
-    <header>
-        <h1>Direktori Layanan Darurat & Publik</h1>
-        <p>Pusat Informasi Cepat Tanggap untuk Warga Sekitar</p>
-    </header>
+<body class="antialiased selection:bg-blue-600 selection:text-white">
 
-    <main class="container">
-        <!-- Kartu 1: Rumah Sakit -->
-        <div class="card">
-            <h2>Rumah Sakit Umum</h2>
-            <p class="category">Kesehatan</p>
-            <p><strong>Alamat:</strong> Jl. Merdeka No. 10</p>
-            <p><strong>Telepon:</strong> (0351) 123456</p>
-            <a href="tel:0351123456" class="btn">Hubungi / Panggil</a>
+  <!-- ================= NAVBAR ================= -->
+  <nav class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="#" class="flex items-center gap-2.5 group">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold shadow-md shadow-blue-600/20 group-hover:scale-105 transition-transform">
+            <i data-lucide="compass" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="font-display font-bold text-lg tracking-tight text-slate-900">Karya<span class="text-blue-600">Sempat</span></span>
+            <span class="hidden sm:inline-block text-[11px] font-semibold uppercase tracking-wider text-slate-400 ml-1.5 px-2 py-0.5 bg-slate-100 rounded-md">SMKN 4 Madiun</span>
+          </div>
+        </a>
+
+        <div class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+          <a href="#etalase" class="hover:text-blue-600 transition-colors">Etalase Karya</a>
+          <a href="#jurnal-pkl" class="hover:text-blue-600 transition-colors">Jejak PKL Kakak Kelas</a>
+          <a href="#tentang" class="hover:text-blue-600 transition-colors">Visi & Manfaat</a>
         </div>
 
-        <!-- Kartu 2: Pemadam Kebakaran -->
-        <div class="card">
-            <h2>Pos Damkar</h2>
-            <p class="category">Darurat Kebakaran</p>
-            <p><strong>Alamat:</strong> Jl. Pattimura No. 5</p>
-            <p><strong>Telepon:</strong> (0351) 113</p>
-            <a href="tel:0351113" class="btn">Hubungi / Panggil</a>
+        <div class="flex items-center gap-2.5">
+          <button type="button" onclick="bukaModal('modal-pkl')" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-100/80 hover:bg-amber-200/80 transition-colors cursor-pointer">
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+            Bagikan Pengalaman PKL
+          </button>
+          <button type="button" onclick="bukaModal('modal-karya')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-600/20 transition-all cursor-pointer">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            Unggah Karya
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= HERO SECTION ================= -->
+  <header class="relative overflow-hidden bg-gradient-to-b from-blue-50/70 via-white to-slate-50 pt-12 pb-16 sm:pt-16 sm:pb-24 border-b border-slate-200/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="max-w-3xl mx-auto text-center">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-800 text-xs font-bold mb-6 border border-blue-200/60">
+          <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+          Ruang Ekspresi, Portofolio & Kompas PKL Siswa SMKN 4 Madiun
+        </div>
+        
+        <h1 class="font-display text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-5">
+          Bakat Tak Hanya Diukur dari <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Angka di Atas Rapor.</span>
+        </h1>
+        
+        <p class="text-base sm:text-lg text-slate-600 leading-relaxed mb-8">
+          Panggung digital bagi siswa <strong>SMKN 4 Madiun</strong> untuk memamerkan mahakarya nyata kepada guru, orang tua, dan dunia industri—dilengkapi catatan jujur pengalaman PKL kakak kelas.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <a href="#etalase" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 shadow-lg shadow-slate-900/10 transition-all">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+            Jelajahi Karya Siswa
+          </a>
+          <a href="#jurnal-pkl" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white text-slate-800 font-bold text-sm border border-slate-300 hover:bg-slate-50 transition-all">
+            <i data-lucide="map-pin" class="w-4 h-4 text-blue-600"></i>
+            Baca Panduan PKL Kakak Kelas
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 text-center shadow-sm">
+          <div id="stat-karya" class="font-display text-2xl sm:text-3xl font-extrabold text-blue-600">0</div>
+          <div class="text-xs font-semibold text-slate-500 mt-1">Karya & Tugas Dipamerkan</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 text-center shadow-sm">
+          <div id="stat-pkl" class="font-display text-2xl sm:text-3xl font-extrabold text-amber-600">0</div>
+          <div class="text-xs font-semibold text-slate-500 mt-1">Kisah PKL Kakak Kelas</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 text-center shadow-sm">
+          <div class="font-display text-2xl sm:text-3xl font-extrabold text-emerald-600">6</div>
+          <div class="text-xs font-semibold text-slate-500 mt-1">Kompetensi Keahlian</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 text-center shadow-sm">
+          <div class="font-display text-2xl sm:text-3xl font-extrabold text-indigo-600">100%</div>
+          <div class="text-xs font-semibold text-slate-500 mt-1">Bukti Nyata Skill Siswa</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ETALASE KARYA ================= -->
+  <section id="etalase" class="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <div>
+        <span class="text-xs font-extrabold uppercase tracking-wider text-blue-600">Etalase Mahakarya & Tugas</span>
+        <h2 class="font-display text-2xl sm:text-3xl font-bold text-slate-900 mt-1">Bukti Kecerdasan dalam Ribuan Warna</h2>
+        <p class="text-sm text-slate-600 mt-2 max-w-2xl">
+          Setiap goresan, rancangan 3D, hidangan, hingga pelayanan adalah bukti nyata potensi siswa SMKN 4 Madiun.
+        </p>
+      </div>
+
+      <div class="relative w-full md:w-72">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2">N/A</i>
+        <input 
+          type="text" 
+          id="search-karya" 
+          placeholder="Cari nama siswa, judul karya..." 
+          class="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+    </div>
+    
+    <!-- Filter Jurusan Karya -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-4 mb-6">
+      <button type="button" data-filter="Semua" class="filter-btn active px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-sm whitespace-nowrap transition-all cursor-pointer">Semua Jurusan</button>
+      <button type="button" data-filter="Animasi" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap transition-all cursor-pointer">Animasi</button>
+      <button type="button" data-filter="Perhotelan" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap transition-all cursor-pointer">Perhotelan</button>
+      <button type="button" data-filter="Usaha Layanan Wisata" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap transition-all cursor-pointer">Usaha Layanan Wisata</button>
+      <button type="button" data-filter="Desain Produksi Busana" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap transition-all cursor-pointer">Desain Produksi Busana</button>
+      <button type="button" data-filter="Kuliner" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap transition-all cursor-pointer">Kuliner</button>
+      <button type="button" data-filter="Tata Kecantikan Kulit dan Rambut" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap transition-all cursor-pointer">Tata Kecantikan Kulit & Rambut</button>
+    </div>
+
+    <div id="karya-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+    <div id="karya-empty" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
+      <i data-lucide="folder-search" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
+      <h3 class="font-bold text-slate-800">Karya tidak ditemukan</h3>
+      <p class="text-sm text-slate-500 mt-1">Coba kata kunci lain atau jadilah yang pertama mengunggah karya!</p>
+    </div>
+  </section>
+
+  <!-- ================= JEJAK LANGKAH & ULASAN PKL ================= -->
+  <section id="jurnal-pkl" class="py-16 sm:py-20 bg-slate-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold mb-3 border border-amber-500/30">
+            <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+            Kompas PKL SMKN 4 Madiun
+          </div>
+          <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Jejak Langkah & Ulasan PKL Kakak Kelas</h2>
+          <p class="text-sm text-slate-300 mt-2 max-w-2xl">
+            Belajar langsung dari pengalaman nyata kakak tingkat sebelum terjun ke dunia industri.
+          </p>
         </div>
 
-        <!-- Kartu 3: Kantor Polisi -->
-        <div class="card">
-            <h2>Polsek Setempat</h2>
-            <p class="category">Keamanan</p>
-            <p><strong>Alamat:</strong> Jl. Bhayangkara No. 1</p>
-            <p><strong>Telepon:</strong> (0351) 110</p>
-            <a href="tel:0351110" class="btn">Hubungi / Panggil</a>
-        </div>
-    </main>
+        <button type="button" onclick="bukaModal('modal-pkl')" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm transition-all shadow-lg shadow-amber-500/20 whitespace-nowrap cursor-pointer">
+          <i data-lucide="pen-tool" class="w-4 h-4"></i>
+          Tulis Pengalaman PKL-mu
+        </button>
+      </div>
 
-    <footer>
-        <p>&copy; 2026 Direktori Warga oleh Sinuhun</p>
-    </footer>
-</body>
-</html>
+      <!-- Filter PKL -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-4 mb-6">
+        <button type="button" data-pkl-filter="Semua" class="pkl-filter-btn active px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 whitespace-nowrap transition-all cursor-pointer">Semua Tempat PKL</button>
+        <button type="button" data-pkl-filter="Animasi" class="pkl-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap transition-all cursor-pointer">Animasi</button>
+        <button type="button" data-pkl-filter="Perhotelan" class="pkl-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap transition-all cursor-pointer">Perhotelan</button>
+        <button type="button" data-pkl-filter="Usaha Layanan Wisata" class="pkl-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap transition-all cursor-pointer">Usaha Layanan Wisata</button>
+        <button type="button" data-pkl-filter="Desain Produksi Busana" class="pkl-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap transition-all cursor-pointer">Desain Produksi Busana</button>
+        <button type="button" data-pkl-filter="Kuliner" class="pkl-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap transition-all cursor-pointer">Kuliner</button>
+        <button type="button" data-pkl-filter="Tata Kecantikan Kulit dan Rambut" class="pkl-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap transition-all cursor-pointer">Tata Kecantikan Kulit & Rambut</button>
+      </div>
+
+      <div id="pkl-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- ================= VISI & MANFAAT ================= -->
+  <section id="tentang" class="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-7">
+          <span class="text-xs font-bold uppercase tracking-widest text-blue-200">Mengapa Platform Ini Lahir?</span>
+          <h2 class="font-display text-2xl sm:text-3xl font-bold mt-2 leading-snug">
+            Menjawab Keresahan Mencari Tempat PKL & Meruntuhkan Stigma Sistem Ranking
+          </h2>
+          <p class="text-sm sm:text-base text-blue-100 mt-4 leading-relaxed">
+            Di sini, setiap karya adalah suara, dan setiap pengalaman kakak kelas adalah pelita bagi adik tingkatnya.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-white border-t border-slate-200 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+      <div>
+        <span class="font-display font-bold text-slate-900">KaryaSempat — SMKN 4 Madiun</span>
+        <p class="text-xs text-slate-500 mt-1">Inisiatif ruang apresiasi karya siswa dan direktori pengalaman PKL.</p>
+      </div>
+      <div class="text-xs text-slate-400">Dibuat untuk memajukan potensi generasi muda SMKN 4 Madiun.</div>
+    </div>
+  </footer>
+
+  <!-- ================= MODAL UNGGAH KARYA ================= -->
+  <div id="modal-karya" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-auto">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <h3 class="font-display text-xl font-bold text-slate-900">Unggah Karya / Hasil Tugas</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Tunjukkan bakatmu kepada guru, orang tua, dan dunia industri.</p>
+        </div>
+        <button type="button" onclick="tutupModal('modal-karya')" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-karya" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
+            <input type="text" id="karya-nama" required placeholder="Contoh: Farrel Abyantara" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Jurusan</label>
+            <select id="karya-jurusan" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <option value="Animasi">Animasi</option>
+              <option value="Perhotelan">Perhotelan</option>
+              <option value="Usaha Layanan Wisata">Usaha Layanan Wisata</option>
+              <option value="Desain Produksi Busana">Desain Produksi Busana</option>
+              <option value="Kuliner">Kuliner</option>
+              <option value="Tata Kecantikan Kulit dan Rambut">Tata Kecantikan Kulit dan Rambut</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Judul Karya / Proyek Tugas</label>
+          <input type="text" id="karya-judul" required placeholder="Contoh: 3D Environment Kedai Ramen" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Unggah Foto Karya (Opsional)</label>
+          <input type="file" id="karya-file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 border border-slate-200 rounded-xl p-1.5" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Cerita Singkat & Tools</label>
+          <textarea id="karya-deskripsi" rows="3" required placeholder="Ceritakan proses pembuatan dan software yang dipakai..." class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tautan Portofolio (Opsional)</label>
+            <input type="url" id="karya-link" placeholder="https://..." class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Kontak WhatsApp / IG</label>
+            <input type="text" id="karya-kontak" placeholder="@instagram / 0812..." class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/20 transition-all cursor-pointer">
+          Publikasikan ke Etalase Sekolah
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL TAMBAH PKL ================= -->
+  <div id="modal-pkl" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 my-auto">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <h3 class="font-display text-xl font-bold text-slate-900">Bagikan Pengalaman PKL</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Bantu adik kelas menemukan tempat magang yang tepat.</p>
+        </div>
+        <button type="button" onclick="tutupModal('modal-pkl')" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-pkl" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nama & Kelas</label>
+            <input type="text" id="pkl-nama" required placeholder="Contoh: Raka (XII Animasi)" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Jurusan</label>
+            <select id="pkl-jurusan" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none bg-white">
+              <option value="Animasi">Animasi</option>
+              <option value="Perhotelan">Perhotelan</option>
+              <option value="Usaha Layanan Wisata">Usaha Layanan Wisata</option>
+              <option value="Desain Produksi Busana">Desain Produksi Busana</option>
+              <option value="Kuliner">Kuliner</option>
+              <option value="Tata Kecantikan Kulit dan Rambut">Tata Kecantikan Kulit dan Rambut</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Instansi / Perusahaan</label>
+            <input type="text" id="pkl-tempat" required placeholder="Contoh: Studio Animasi" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Kota</label>
+            <input type="text" id="pkl-kota" required placeholder="Contoh: Yogyakarta" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Pekerjaan Harian & Suasana Kerja</label>
+          <textarea id="pkl-cerita" rows="3" required placeholder="Ceritakan pengalaman harianmu..." class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Tips Lolos untuk Adik Kelas</label>
+          <textarea id="pkl-tips" rows="2" required placeholder="Contoh: Siapkan portofolio..." class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer">
+          Bagikan Jurnal PKL
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DETAIL KARYA ================= -->
+  <div id="modal-detail" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+    <div id="detail-content" class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl my-auto"></div>
+  </div>
+
+  <!-- ================= JAVASCRIPT UTAMA ================= -->
+  <script>
+    const singkatanJurusan = {
+      "Animasi": "ANM",
+      "Perhotelan": "PH",
+      "Usaha Layanan Wisata": "ULW",
+      "Desain Produksi Busana": "DPB",
+      "Kuliner": "KUL",
+      "Tata Kecantikan Kulit dan Rambut": "TKKR"
+    };
+
+    const defaultKarya = [
+      {
+        id: 1,
+        nama: "Jalu Farrel Abyantara",
+        jurusan: "Animasi",
+        judul: "3D Environment: Sudut Kedai Ramen Malam Hari",
+        deskripsi: "Eksplorasi pencahayaan malam dan texturing di Blender 3D untuk persiapan portofolio PKL studio animasi.",
+        gambar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+        link: "https://abyantportofolio.framer.website",
+        kontak: "IG: @abyant.3d",
+        apresiasi: 42
+      },
+      {
+        id: 2,
+        nama: "Julie Cahya Karmila",
+        jurusan: "Usaha Layanan Wisata",
+        judul: "Paket Wisata Edukasi & Budaya Madiun Raya",
+        deskripsi: "Perancangan itinerary wisata 2 hari 1 malam lengkap dengan perhitungan biaya dan pemanduan sejarah.",
+        gambar: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
+        link: "",
+        kontak: "Hubin SMKN 4 Madiun",
+        apresiasi: 38
+      },
+      {
+        id: 3,
+        nama: "Siti Rahmawati",
+        jurusan: "Desain Produksi Busana",
+        judul: "Modern Wear: Eksplorasi Tenun Lurik Nusantara",
+        deskripsi: "Perancangan pola busana modern menggunakan kain lurik tradisional dengan potongan asimetris.",
+        gambar: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80",
+        link: "",
+        kontak: "IG: @siti.fashion",
+        apresiasi: 35
+      }
+    ];
+
+    const defaultPKL = [
+      {
+        id: 101,
+        nama: "Raka Mahendra",
+        jurusan: "Animasi",
+        tempat: "Studio Animasi & Visual Kreatif",
+        kota: "Yogyakarta",
+        cerita: "Selama 6 bulan PKL, saya dilibatkan langsung dalam proses 3D asset modeling dan clean-up animasi.",
+        tips: "Rapikan 3-5 karya terbaikmu di Blender/Maya dalam satu link portofolio."
+      },
+      {
+        id: 102,
+        nama: "Sinta Maharani",
+        jurusan: "Perhotelan",
+        tempat: "Hotel Aston Madiun",
+        kota: "Madiun",
+        cerita: "Pengalaman luar biasa belajar langsung menangani tamu di Front Office dan Housekeeping.",
+        tips: "Kuasai bahasa Inggris dasar dan jaga grooming sejak hari pertama."
+      }
+    ];
+
+    let karyaList = JSON.parse(localStorage.getItem('smkn4_karya')) || defaultKarya;
+    let pklList = JSON.parse(localStorage.getItem('smkn4_pkl')) || defaultPKL;
+
+    let currentKaryaFilter = 'Semua';
+    let currentSearchQuery = '';
+    let currentPklFilter = 'Semua';
+
+    function simpanDataStorage() {
+      localStorage.setItem('smkn4_karya', JSON.stringify(karyaList));
+      localStorage.setItem('smkn4_pkl', JSON.stringify(pklList));
+      updateStatistik();
+    }
+
+    function updateStatistik() {
+      document.getElementById('stat-karya').textContent = karyaList.length;
+      document.getElementById('stat-pkl').textContent = pklList.length;
+    }
+
+    function renderEtalaseKarya() {
+      const grid = document.getElementById('karya-grid');
+      const emptyState = document.getElementById('karya-empty');
+      if (!grid) return;
+
+      const filtered = karyaList.filter(item => {
+        const matchJurusan = currentKaryaFilter === 'Semua' || item.jurusan === currentKaryaFilter;
+        const matchSearch = item.judul.toLowerCase().includes(currentSearchQuery) ||
+                            item.nama.toLowerCase().includes(currentSearchQuery) ||
+                            item.deskripsi.toLowerCase().includes(currentSearchQuery);
+        return matchJurusan && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+      }
+
+      if (emptyState) emptyState.classList.add('hidden');
+      grid.innerHTML = filtered.map(item => {
+        const badge = singkatanJurusan[item.jurusan] || item.jurusan;
+        return `
+          <article class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden flex flex-col card-hover">
+            <div class="relative aspect-[16/10] bg-slate-100 overflow-hidden cursor-pointer" onclick="bukaDetailKarya(${item.id})">
+              <img src="${item.gambar}" alt="${item.judul}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-900/80 text-white backdrop-blur-sm">
+                ${badge}
+              </span>
+            </div>
+            
+            <div class="p-5 flex-1 flex flex-col">
+              <h3 onclick="bukaDetailKarya(${item.id})" class="font-display font-bold text-lg text-slate-900 hover:text-blue-600 cursor-pointer line-clamp-1">
+                ${item.judul}
+              </h3>
+              <p class="text-xs font-semibold text-blue-600 mt-1">Karya: ${item.nama}</p>
+              <p class="text-xs text-slate-600 mt-2.5 line-clamp-2 leading-relaxed flex-1">
+                ${item.deskripsi}
+              </p>
+
+              <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" onclick="tambahApresiasi(${item.id})" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-rose-600 transition-colors cursor-pointer">
+                  <i data-lucide="heart" class="w-4 h-4 text-rose-500 fill-rose-500"></i>
+                  <span>${item.apresiasi || 1} Apresiasi</span>
+                </button>
+                <button type="button" onclick="bukaDetailKarya(${item.id})" class="text-xs font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer">
+                  Lihat Detail
+                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderJurnalPKL() {
+      const grid = document.getElementById('pkl-grid');
+      if (!grid) return;
+
+      const filtered = pklList.filter(item => {
+        return currentPklFilter === 'Semua' || item.jurusan === currentPklFilter;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 text-sm">Belum ada ulasan PKL untuk jurusan ini.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => {
+        const badge = singkatanJurusan[item.jurusan] || item.jurusan;
+        return `
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  ${badge}
+                </span>
+                <span class="inline-flex items-center gap-1 text-xs font-semibold text-slate-400">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
+                  ${item.kota}
+                </span>
+              </div>
+
+              <h3 class="font-display text-lg font-bold text-white">${item.tempat}</h3>
+              <p class="text-xs text-amber-400 font-semibold mt-0.5">Oleh: ${item.nama}</p>
+
+              <p class="text-sm text-slate-300 mt-3.5 leading-relaxed">
+                "${item.cerita}"
+              </p>
+            </div>
+
+            <div class="mt-5 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-amber-300 mb-1">
+                <i data-lucide="lightbulb" class="w-4 h-4"></i>
+                Tips Lolos & Persiapan Adik Kelas:
+              </div>
+              <p class="text-xs text-slate-200 leading-relaxed">
+                ${item.tips}
+              </p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function tambahApresiasi(id) {
+      const item = karyaList.find(k => k.id === id);
+      if (item) {
+        item.apresiasi = (item.apresiasi || 1) + 1;
+        simpanDataStorage();
+        renderEtalaseKarya();
+      }
+    }
+
+    // Modal Controls
+    function bukaModal(modalId) {
+      const m = document.getElementById(modalId);
+      if (m) {
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      }
+    }
+
+    function tutupModal(modalId) {
+      const m = document.getElementById(modalId);
+      if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      }
+    }
+
+    function bukaDetailKarya(id) {
+      const item = karyaList.find(k => k.id === id);
+      if (!item) return;
+
+      const content = document.getElementById('detail-content');
+      if (!content) return;
+
+      content.innerHTML = `
+        <div class="relative">
+          <img src="${item.gambar}" alt="${item.judul}" class="w-full max-h-80 object-cover" />
+          <button type="button" onclick="tutupModal('modal-detail')" class="absolute top-4 right-4 p-2 rounded-full bg-slate-900/70 text-white hover:bg-slate-900 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="p-6 sm:p-8">
+          <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-100 text-blue-700">${item.jurusan}</span>
+          <h3 class="font-display text-2xl font-bold text-slate-900 mt-3">${item.judul}</h3>
+          <p class="text-sm font-semibold text-slate-600 mt-1">Kreator: <span class="text-blue-600">${item.nama}</span></p>
+          
+          <p class="text-sm text-slate-600 mt-4 leading-relaxed">${item.deskripsi}</p>
+
+          <div class="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+            <div class="text-xs text-slate-500">
+              <span class="font-bold text-slate-700 block">Kontak / Hubin:</span>
+              ${item.kontak || 'Hubin SMKN 4 Madiun'}
+            </div>
+            ${item.link ? `
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700">
+                Buka Portofolio
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      bukaModal('modal-detail');
+      lucide.createIcons();
+    }
+
+    // Event Listeners Filter
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+          b.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        });
+        btn.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        
+        currentKaryaFilter = btn.dataset.filter;
+        renderEtalaseKarya();
+      });
+    });
+
+    document.querySelectorAll('.pkl-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.pkl-filter-btn').forEach(b => {
+          b.classList.remove('bg-amber-500', 'text-slate-950');
+          b.classList.add('bg-slate-800', 'text-slate-300');
+        });
+        btn.classList.remove('bg-slate-800', 'text-slate-300');
+        btn.classList.add('bg-amber-500', 'text-slate-950');
+
+        currentPklFilter = btn.dataset.pklFilter;
+        renderJurnalPKL();
+      });
+    });
+
+    // Pencarian
+    const searchInput = document.getElementById('search-karya');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        currentSearchQuery = e.target.value.toLowerCase();
+        renderEtalaseKarya();
+      });
+    }
+
+    // Form Submit Karya
+    const formKarya = document.getElementById('form-karya');
+    if (formKarya) {
+      formKarya.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nama = document.getElementById('karya-nama').value;
+        const jurusan = document.getElementById('karya-jurusan').value;
+        const judul = document.getElementById('karya-judul').value;
+        const deskripsi = document.getElementById('karya-deskripsi').value;
+        const link = document.getElementById('karya-link').value;
+        const kontak = document.getElementById('karya-kontak').value;
+        const fileInput = document.getElementById('karya-file');
+
+        const simpanBaru = (imgSrc) => {
+          karyaList.unshift({
+            id: Date.now(),
+            nama,
+            jurusan,
+            judul,
+            deskripsi,
+            gambar: imgSrc,
+            link,
+            kontak: kontak || 'Hubin SMKN 4 Madiun',
+            apresiasi: 1
+          });
+          simpanDataStorage();
+          renderEtalaseKarya();
+          formKarya.reset();
+          tutupModal('modal-karya');
+        };
+
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (event) => simpanBaru(event.target.result);
+          reader.readAsDataURL(fileInput.files[0]);
+        } else {
+          simpanBaru('https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=800&q=80');
+        }
+      });
+    }
+
+    // Form Submit PKL
+    const formPkl = document.getElementById('form-pkl');
+    if (formPkl) {
+      formPkl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        pklList.unshift({
+          id: Date.now(),
+          nama: document.getElementById('pkl-nama').value,
+          jurusan: document.getElementById('pkl-jurusan').value,
+          tempat: document.getElementById('pkl-tempat').value,
+          kota: document.getElementById('pkl-kota').value,
+          cerita: document.getElementById('pkl-cerita').value,
+          tips: document.getElementById('pkl-tips').value
+        });
+        simpanDataStorage();
+        renderJurnalPKL();
+        formPkl.reset();
+        tutupModal('modal-pkl');
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateStatistik();
+      renderEtalaseKarya();
+      renderJurnalPKL();
+      lucide.createIcons();
