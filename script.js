@@ -104,8 +104,8 @@ function showWorkspaceView() {
 // ============================================================
 function toggleAuthMode() {
   const isLogin = !$('loginForm').classList.contains('hidden');
-  $('loginForm').classList.toggle('hidden', !isLogin);
-  $('registerForm').classList.toggle('hidden', isLogin);
+  $('loginForm').classList.toggle('hidden', isLogin);      // ✅ dibalik
+  $('registerForm').classList.toggle('hidden', !isLogin);  // ✅ dibalik
   $('authTitle').textContent = isLogin ? 'Buat Akun Baru' : 'Selamat Datang';
   $('authSubtitle').textContent = isLogin
     ? 'Daftar untuk mulai mengelola workspace Anda.'
