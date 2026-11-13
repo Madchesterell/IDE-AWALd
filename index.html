@@ -9,66 +9,95 @@
 </head>
 <body>
 
-    <!-- ============ AUTH GATE (PINTU MASUK) ============ -->
-<div id="authContainer" class="auth-gate-modal hidden">
+<!-- ============ 1. AUTH VIEW (Login/Daftar) ============ -->
+<div id="authView" class="auth-gate-modal">
     <div class="auth-card">
-        <h2>Digital Workspace Portal</h2>
-        <p class="subtitle">Masuk ke ruang kerja atau buat ruang baru sebagai Mentor.</p>
-
-        <div class="auth-tabs">
-            <button type="button" class="tab-btn active" data-tab="join" onclick="switchAuthTab('join')">Gabung (Pekerja)</button>
-            <button type="button" class="tab-btn" data-tab="create" onclick="switchAuthTab('create')">Buat Ruang (Mentor)</button>
+        <div class="auth-brand">
+            <h1>WorkSpace<span>Pro</span></h1>
         </div>
+        <h2 id="authTitle">Selamat Datang</h2>
+        <p class="subtitle" id="authSubtitle">Masuk untuk mengakses platform evaluasi kinerja karyawan.</p>
 
-        <!-- Form Gabung (Pekerja) -->
-        <form id="joinRoomForm" class="auth-form">
+        <!-- LOGIN FORM -->
+        <form id="loginForm" class="auth-form">
             <div class="form-group">
-                <label>Nama Ruang Kerja</label>
-                <input type="text" id="joinRoomName" required placeholder="Masukkan nama ruang...">
+                <label>Alamat Email</label>
+                <input type="email" id="loginEmail" required placeholder="nama@perusahaan.com">
             </div>
             <div class="form-group">
-                <label>Kata Sandi Ruang Kerja</label>
-                <input type="password" id="joinRoomPass" required placeholder="Masukkan sandi...">
+                <label>Kata Sandi</label>
+                <input type="password" id="loginPassword" required placeholder="Masukkan kata sandi" minlength="6">
             </div>
-            <div class="form-group">
-                <label>Nama Anda (Pekerja)</label>
-                <input type="text" id="joinWorkerName" required placeholder="Nama lengkap Anda...">
-            </div>
-            <button type="submit" class="btn-primary">Masuk ke Ruang Kerja</button>
+            <button type="submit" class="btn-primary" id="loginBtn">Masuk ke Dashboard</button>
         </form>
 
-        <!-- Form Buat Ruang (Mentor) -->
-        <form id="createRoomForm" class="auth-form hidden">
+        <!-- REGISTER FORM (hidden default) -->
+        <form id="registerForm" class="auth-form hidden">
             <div class="form-group">
-                <label>Nama Ruang Kerja Baru</label>
-                <input type="text" id="newRoomName" required placeholder="Contoh: Tim Animasi SMKN 4">
+                <label>Nama Lengkap</label>
+                <input type="text" id="registerName" required placeholder="Nama lengkap Anda">
             </div>
             <div class="form-group">
-                <label>Kata Sandi Ruang (untuk Pekerja)</label>
-                <input type="password" id="newRoomPass" required placeholder="Buat sandi rahasia...">
+                <label>Alamat Email</label>
+                <input type="email" id="registerEmail" required placeholder="nama@perusahaan.com">
             </div>
             <div class="form-group">
-                <label>Tautan Google Drive Mentor</label>
-                <input type="url" id="newRoomDrive" placeholder="https://drive.google.com/drive/folders/...">
+                <label>Kata Sandi</label>
+                <input type="password" id="registerPassword" required placeholder="Minimal 6 karakter" minlength="6">
             </div>
-            <button type="submit" class="btn-primary">Dirikan Ruang Kerja (Jadi Mentor)</button>
+            <button type="submit" class="btn-primary" id="registerBtn">Daftar Akun</button>
         </form>
+
+        <p class="auth-toggle">
+            <span id="authToggleText">Belum punya akun?</span>
+            <a href="#" id="authToggleLink">Daftar sekarang</a>
+        </p>
     </div>
 </div>
-    <!-- ============ MAIN APP (disembunyikan sampai login) ============ -->
-<div id="mainApp" class="hidden">
 
+<!-- ============ 2. DASHBOARD VIEW ============ -->
+<div id="dashboardView" class="hidden">
     <header class="navbar">
         <div class="brand">
             <h1>WorkSpace<span>Pro</span></h1>
-            <span class="badge-capacity" id="workerCountDisplay">Pekerja: 0 / 20</span>
-            <span class="badge-live" id="liveStatus">🔴 Connecting...</span>
         </div>
-       <div class="role-controls" id="roleControls"></div>
+        <div class="role-controls">
+            <span id="userEmailDisplay" style="font-size:0.8rem;color:var(--text-muted);"></span>
+            <button type="button" id="logoutBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">Keluar</button>
+        </div>
     </header>
 
     <main class="container">
+        <div class="dashboard-header">
+            <div>
+                <h2>Workspace Saya</h2>
+                <p class="subtitle">Pilih workspace untuk masuk, atau buat/gabung yang baru.</p>
+            </div>
+            <div class="dashboard-actions">
+                <button type="button" id="createWorkspaceBtn" class="btn-primary" style="width:auto;">+ Buat Workspace</button>
+                <button type="button" id="joinWorkspaceBtn" class="btn-secondary">Gabung Workspace</button>
+            </div>
+        </div>
 
+        <div id="workspaceList" class="workspace-grid">
+            <p class="empty-hint">Memuat workspace...</p>
+        </div>
+    </main>
+</div>
+
+<!-- ============ 3. WORKSPACE VIEW (Kanban) ============ -->
+<div id="workspaceView" class="hidden">
+    <header class="navbar">
+        <div class="brand">
+            <button type="button" id="backToDashboardBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">← Kembali</button>
+            <h1 id="workspaceTitle">Workspace</h1>
+            <span class="badge-capacity" id="workerCountDisplay">Pekerja: 0 / 20</span>
+            <span class="badge-live" id="liveStatus">🔴 Connecting...</span>
+        </div>
+        <div class="role-controls" id="roleControls"></div>
+    </header>
+
+    <main class="container">
         <!-- PANEL MENTOR -->
         <section id="mentorPanel" class="panel-section">
             <div class="grid-2-col">
@@ -83,9 +112,7 @@
                         </div>
                         <small id="driveStatusText" class="status-text">Belum ada folder tertaut.</small>
                     </div>
-
                     <hr class="divider">
-
                     <h3>Manajemen Anggota Tim (Maks. 20)</h3>
                     <div class="input-with-btn">
                         <input type="text" id="newWorkerName" placeholder="Nama pekerja baru...">
@@ -123,7 +150,7 @@
                         </div>
                         <div class="form-group">
                             <label for="taskDesc">Instruksi & Kriteria KPI</label>
-                            <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output dan target harian yang diharapkan..."></textarea>
+                            <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output..."></textarea>
                         </div>
                         <button type="submit" class="btn-primary">Bagikan Tugas ke Ruang Kerja</button>
                     </form>
@@ -142,70 +169,92 @@
                     <div class="progress-bar-fill" id="kpiProgressBar" style="width: 0%;"></div>
                 </div>
             </div>
-           <div id="workerDailyGoalBox" class="daily-goal-box hidden">
-    <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
-    <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
-    <span id="dailyGoalDisplay" class="goal-badge"></span>
-</div>
+            <div id="workerDailyGoalBox" class="daily-goal-box hidden">
+                <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
+                <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
+                <span id="dailyGoalDisplay" class="goal-badge"></span>
+            </div>
         </section>
 
-        <!-- KANBAN BOARD -->
+        <!-- KANBAN -->
         <section class="kanban-board">
             <div class="kanban-column" data-status="todo">
-                <div class="column-header">
-                    <h3>To Do (Tugas Baru)</h3>
-                    <span class="count-badge" id="count-todo">0</span>
-                </div>
+                <div class="column-header"><h3>To Do</h3><span class="count-badge" id="count-todo">0</span></div>
                 <div class="task-list" id="list-todo"></div>
             </div>
             <div class="kanban-column" data-status="progress">
-                <div class="column-header">
-                    <h3>In Progress (Dikerjakan)</h3>
-                    <span class="count-badge" id="count-progress">0</span>
-                </div>
+                <div class="column-header"><h3>In Progress</h3><span class="count-badge" id="count-progress">0</span></div>
                 <div class="task-list" id="list-progress"></div>
             </div>
             <div class="kanban-column" data-status="review">
-                <div class="column-header">
-                    <h3>Review & Laporan Masuk</h3>
-                    <span class="count-badge" id="count-review">0</span>
-                </div>
+                <div class="column-header"><h3>Review</h3><span class="count-badge" id="count-review">0</span></div>
                 <div class="task-list" id="list-review"></div>
             </div>
             <div class="kanban-column" data-status="done">
-                <div class="column-header">
-                    <h3>Done (Selesai & Valid)</h3>
-                    <span class="count-badge" id="count-done">0</span>
-                </div>
+                <div class="column-header"><h3>Done</h3><span class="count-badge" id="count-done">0</span></div>
                 <div class="task-list" id="list-done"></div>
             </div>
         </section>
-
     </main>
-    
 </div>
-    
-    <!-- MODAL LAPORAN -->
-    <div id="reportModal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-modal" id="closeModalBtn">&times;</span>
-            <h2>Kirim Laporan & Bukti Kerja</h2>
-            <p class="subtitle">File akan otomatis diteruskan ke folder Google Drive Mentor.</p>
-            <form id="submitReportForm">
-                <input type="hidden" id="reportTaskId">
-                <div class="form-group">
-                    <label for="reportNotes">Catatan Progres Pekerjaan</label>
-                    <textarea id="reportNotes" rows="3" required placeholder="Jelaskan bagian yang sudah dikerjakan..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="reportFile">Pilih File Laporan (PDF, ZIP, Gambar, Video)</label>
-                    <input type="file" id="reportFile" required>
-                </div>
-                <button type="submit" class="btn-primary">Unggah & Kirim ke Drive Mentor</button>
-            </form>
-        </div>
-    </div>
 
-    <script type="module" src="script.js"></script>
+<!-- ============ MODAL: BUAT WORKSPACE ============ -->
+<div id="createWorkspaceModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal" data-close="createWorkspaceModal">&times;</span>
+        <h2>Buat Workspace Baru</h2>
+        <p class="subtitle">Anda akan menjadi Mentor di workspace ini.</p>
+        <form id="createWorkspaceForm">
+            <div class="form-group">
+                <label>Nama Workspace</label>
+                <input type="text" id="newWorkspaceName" required placeholder="Contoh: Tim Animasi SMKN 4">
+            </div>
+            <div class="form-group">
+                <label>Tautan Google Drive (opsional)</label>
+                <input type="url" id="newWorkspaceDrive" placeholder="https://drive.google.com/drive/folders/...">
+            </div>
+            <button type="submit" class="btn-primary" id="createWorkspaceSubmitBtn">Buat Workspace</button>
+        </form>
+    </div>
+</div>
+
+<!-- ============ MODAL: GABUNG WORKSPACE ============ -->
+<div id="joinWorkspaceModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal" data-close="joinWorkspaceModal">&times;</span>
+        <h2>Gabung Workspace</h2>
+        <p class="subtitle">Masukkan kode undangan dari Mentor Anda.</p>
+        <form id="joinWorkspaceForm">
+            <div class="form-group">
+                <label>Kode Undangan (6 karakter)</label>
+                <input type="text" id="joinCodeInput" required placeholder="Contoh: A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
+            </div>
+            <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Workspace</button>
+        </form>
+    </div>
+</div>
+
+<!-- ============ MODAL: LAPORAN ============ -->
+<div id="reportModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal" id="closeModalBtn">&times;</span>
+        <h2>Kirim Laporan & Bukti Kerja</h2>
+        <p class="subtitle">File akan otomatis diteruskan ke folder Google Drive Mentor.</p>
+        <form id="submitReportForm">
+            <input type="hidden" id="reportTaskId">
+            <div class="form-group">
+                <label for="reportNotes">Catatan Progres Pekerjaan</label>
+                <textarea id="reportNotes" rows="3" required placeholder="Jelaskan bagian yang sudah dikerjakan..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="reportFile">Pilih File Laporan</label>
+                <input type="file" id="reportFile" required>
+            </div>
+            <button type="submit" class="btn-primary">Unggah & Kirim ke Drive Mentor</button>
+        </form>
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
 </body>
 </html>
