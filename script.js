@@ -1,248 +1,389 @@
-// ================= KAMUS SINGKATAN JURUSAN UNTUK CARD =================
-const singkatanJurusan = {
-  "Animasi": "ANM",
-  "Perhotelan": "PH",
-  "Usaha Layanan Wisata": "ULW",
-  "Desain Produksi Busana": "DPB",
-  "Kuliner": "KUL",
-  "Tata Kecantikan Kulit dan Rambut": "TKKR"
+// =========================================================================
+// STATE MANAGEMENT (PENYIMPANAN DATA LOKAL & MEMORI)
+// =========================================================================
+let appState = {
+    currentRole: 'mentor', // 'mentor' atau 'worker'
+    mentorDriveLink: localStorage.getItem('mentorDriveLink') || '',
+    workers: JSON.parse(localStorage.getItem('workspaceWorkers')) || [
+        { id: 1, name: 'Budi Santoso' },
+        { id: 2, name: 'Siti Aminah' },
+        { id: 3, name: 'Reza Pratama' }
+    ],
+    tasks: JSON.parse(localStorage.getItem('workspaceTasks')) || [
+        {
+            id: 'task-1',
+            title: 'Desain Konsep Awal Karakter 3D',
+            assignee: 'Budi Santoso',
+            kpi: 15,
+            startDate: '2026-11-01',
+            endDate: '2026-11-10',
+            desc: 'Buat sketsa tampak depan dan samping.',
+            status: 'todo', // todo, progress, review, done
+            reportNotes: '',
+            reportFile: ''
+        }
+    ],
+    dailyGoals: JSON.parse(localStorage.getItem('workspaceDailyGoals')) || {}
 };
 
-// ================= DATA AWAL KARYA SISWA SMKN 4 MADIUN =================
-const defaultKarya = [
-  {
-    id: 1,
-    nama: "Jalu Farrel Abyantara",
-    jurusan: "Animasi",
-    judul: "3D Environment: Sudut Kedai Ramen Malam Hari",
-    deskripsi: "Eksplorasi pencahayaan malam (mood lighting) dan texturing di Blender 3D. Proyek ini melatih komposisi kamera dan detail aset lingkungan untuk persiapan portofolio PKL studio animasi.",
-    gambar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-    link: "https://abyantportofolio.framer.website",
-    kontak: "IG: @abyant.3d",
-    apresiasi: 42
-  },
-  {
-    id: 2,
-    nama: "Julie Cahya Karmila",
-    jurusan: "Usaha Layanan Wisata",
-    judul: "Paket Wisata Edukasi & Budaya Madiun Raya",
-    deskripsi: "Perancangan itinerary wisata 2 hari 1 malam lengkap dengan perhitungan biaya (tour quotation) dan pemanduan wisata sejarah di Kota Madiun.",
-    gambar: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-    link: "",
-    kontak: "Hubin SMKN 4 Madiun",
-    apresiasi: 38
-  },
-  {
-    id: 3,
-    nama: "Siti Rahmawati",
-    jurusan: "Desain Produksi Busana",
-    judul: "Modern Wear: Eksplorasi Tenun Lurik Nusantara",
-    deskripsi: "Perancangan pola busana prêt-à-porter modern menggunakan bahan dasar kain lurik tradisional dengan potongan asimetris yang elegan.",
-    gambar: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=800&q=80",
-    link: "",
-    kontak: "IG: @siti.fashion",
-    apresiasi: 35
-  },
-  {
-    id: 4,
-    nama: "Nabila Putri Rahayu",
-    jurusan: "Perhotelan",
-    judul: "Standardisasi Towel Art & Making Bed Eksekutif",
-    deskripsi: "Dokumentasi praktik tata graha (Housekeeping) standar hotel bintang 4 dengan ketepatan waktu di bawah 15 menit dan kerapian detail.",
-    gambar: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
-    link: "",
-    kontak: "Hubin SMKN 4 Madiun",
-    apresiasi: 29
-  },
-  {
-    id: 5,
-    nama: "Bagas Prakoso",
-    jurusan: "Kuliner",
-    judul: "Fusion Pastry: Croissant Isi Pecel & Sambal Kacang",
-    deskripsi: "Inovasi produk bakery yang memadukan teknik laminasi adonan Prancis dengan cita rasa autentik kuliner khas Madiun.",
-    gambar: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80",
-    link: "",
-    kontak: "IG: @bagas.kitchen",
-    apresiasi: 47
-  },
-  {
-    id: 6,
-    nama: "Dewi Lestari",
-    jurusan: "Tata Kecantikan Kulit dan Rambut",
-    judul: "Creative Fantasy Makeup & Traditional Hairdo",
-    deskripsi: "Penataan rambut pengantin tradisional dipadu riasan fantasi panggung dengan teknik gradasi warna yang tajam dan presisi.",
-    gambar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80",
-    link: "",
-    kontak: "IG: @dewi.beauty",
-    apresiasi: 33
-  }
-];
+// =========================================================================
+// INISIALISASI APLIKASI SAAT HALAMAN DIMUAT
+// =========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    initRoleSwitcher();
+    initMentorControls();
+    initWorkerControls();
+    initModalHandlers();
+    renderApp();
+});
 
-// ================= DATA AWAL PENGALAMAN PKL KAKAK KELAS =================
-const defaultPKL = [
-  {
-    id: 101,
-    nama: "Raka Mahendra (Alumni 2025)",
-    jurusan: "Animasi",
-    tempat: "Studio Animasi & Visual Kreatif",
-    kota: "Yogyakarta",
-    cerita: "Selama 6 bulan PKL, saya dilibatkan langsung dalam proses 3D asset modeling dan clean-up animasi. Mentornya sangat terbuka membimbing dari nol asalkan kita mau belajar.",
-    tips: "Rapikan 3-5 karya terbaikmu di Blender/Maya dalam satu link portofolio, dan tunjukkan etika komunikasi yang sopan saat wawancara."
-  },
-  {
-    id: 102,
-    nama: "Sinta Maharani (Kelas XII)",
-    jurusan: "Perhotelan",
-    tempat: "Hotel Aston Madiun",
-    kota: "Madiun",
-    cerita: "Pengalaman luar biasa belajar langsung menangani tamu di bagian Front Office dan Housekeeping. Mental kerja terlatih menghadapi situasi ramai.",
-    tips: "Kuasai bahasa Inggris dasar untuk menyapa tamu, jaga penampilan (grooming) sejak hari pertama tes."
-  },
-  {
-    id: 103,
-    nama: "Rian Hidayat (Alumni 2025)",
-    jurusan: "Desain Produksi Busana",
-    tempat: "Butik & Konveksi Ekspor",
-    kota: "Solo",
-    cerita: "Belajar memahami *tech pack*, teknik menjahit massal dengan standar industri, serta efisiensi pemotongan bahan kain agar minim sisa.",
-    tips: "Perkuat pemahaman membaca pola dasar dan ketelitian menggunakan mesin jahit high-speed."
-  }
-];
-
-// ================= INISIALISASI STATE & LOCALSTORAGE =================
-let karyaList = JSON.parse(localStorage.getItem('smkn4_karya')) || defaultKarya;
-let pklList = JSON.parse(localStorage.getItem('smkn4_pkl')) || defaultPKL;
-
-let currentKaryaFilter = 'Semua';
-let currentSearchQuery = '';
-let currentPklFilter = 'Semua'; // State filter PKL yang baru ditambahkan
-
-function saveData() {
-  localStorage.setItem('smkn4_karya', JSON.stringify(karyaList));
-  localStorage.setItem('smkn4_pkl', JSON.stringify(pklList));
-  updateStats();
+// =========================================================================
+// RENDER UTAMA APLIKASI
+// =========================================================================
+function renderApp() {
+    saveToLocalStorage();
+    updateWorkerDisplay();
+    renderTaskAssigneeOptions();
+    renderKanbanBoard();
+    updateKpiProgress();
+    
+    // Tampilkan / Sembunyikan Panel Berdasarkan Peran
+    const mentorPanel = document.getElementById('mentorPanel');
+    const workerDailyGoalBox = document.getElementById('workerDailyGoalBox');
+    
+    if (appState.currentRole === 'mentor') {
+        mentorPanel.classList.remove('hidden');
+        workerDailyGoalBox.classList.add('hidden');
+    } else {
+        mentorPanel.classList.add('hidden');
+        workerDailyGoalBox.classList.remove('hidden');
+    }
 }
 
-function updateStats() {
-  const elKarya = document.getElementById('stat-karya');
-  const elPkl = document.getElementById('stat-pkl');
-  if (elKarya) elKarya.textContent = karyaList.length;
-  if (elPkl) elPkl.textContent = pklList.length;
+// Simpan ke LocalStorage agar data tidak hilang saat refresh
+function saveToLocalStorage() {
+    localStorage.setItem('mentorDriveLink', appState.mentorDriveLink);
+    localStorage.setItem('workspaceWorkers', JSON.stringify(appState.workers));
+    localStorage.setItem('workspaceTasks', JSON.stringify(appState.tasks));
+    localStorage.setItem('workspaceDailyGoals', JSON.stringify(appState.dailyGoals));
 }
 
-// ================= RENDER ETALASE KARYA =================
-function renderKarya() {
-  const grid = document.getElementById('karya-grid');
-  const emptyState = document.getElementById('karya-empty');
-  if (!grid) return;
+// =========================================================================
+// PENGATURAN PERAN (ROLE SWITCHER)
+// =========================================================================
+function initRoleSwitcher() {
+    const roleSelector = document.getElementById('roleSelector');
+    roleSelector.value = appState.currentRole;
+    
+    roleSelector.addEventListener('change', (e) => {
+        appState.currentRole = e.target.value;
+        renderApp();
+    });
+}
 
-  const filtered = karyaList.filter(item => {
-    const matchJurusan = currentKaryaFilter === 'Semua' || item.jurusan === currentKaryaFilter;
-    const matchSearch = item.judul.toLowerCase().includes(currentSearchQuery) ||
-                        item.nama.toLowerCase().includes(currentSearchQuery) ||
-                        item.deskripsi.toLowerCase().includes(currentSearchQuery);
-    return matchJurusan && matchSearch;
-  });
+// =========================================================================
+// FITUR MENTOR: DRIVE, PEKERJA, & PEMBUATAN TUGAS
+// =========================================================================
+function initMentorControls() {
+    // 1. Simpan Tautan Google Drive Mentor
+    const driveInput = document.getElementById('driveLinkInput');
+    const saveDriveBtn = document.getElementById('saveDriveBtn');
+    const driveStatusText = document.getElementById('driveStatusText');
+    
+    driveInput.value = appState.mentorDriveLink;
+    updateDriveStatusUI(driveStatusText);
+    
+    saveDriveBtn.addEventListener('click', () => {
+        const url = driveInput.value.trim();
+        if (url) {
+            appState.mentorDriveLink = url;
+            saveToLocalStorage();
+            updateDriveStatusUI(driveStatusText);
+            alert('Tautan Google Drive mentor berhasil disimpan!');
+        } else {
+            alert('Mohon masukkan tautan URL Google Drive yang valid.');
+        }
+    });
 
-  if (filtered.length === 0) {
-    grid.innerHTML = '';
-    if (emptyState) emptyState.classList.remove('hidden');
-    return;
-  }
-
-  if (emptyState) emptyState.classList.add('hidden');
-  grid.innerHTML = filtered.map(item => {
-    const kodeJurusan = singkatanJurusan[item.jurusan] || item.jurusan;
-    return `
-      <article class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden flex flex-col card-hover">
-        <div class="relative aspect-[16/10] bg-slate-100 overflow-hidden cursor-pointer" onclick="openDetail(${item.id})">
-          <img src="${item.gambar}" alt="${item.judul}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-          <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-900/80 text-white backdrop-blur-sm">
-            ${kodeJurusan}
-          </span>
-        </div>
+    // 2. Tambah Pekerja (Maksimal 20 orang)
+    const addWorkerBtn = document.getElementById('addWorkerBtn');
+    const newWorkerNameInput = document.getElementById('newWorkerName');
+    
+    addWorkerBtn.addEventListener('click', () => {
+        const name = newWorkerNameInput.value.trim();
+        if (!name) return;
         
-        <div class="p-5 flex-1 flex flex-col">
-          <h3 onclick="openDetail(${item.id})" class="font-display font-bold text-lg text-slate-900 hover:text-blue-600 cursor-pointer line-clamp-1">
-            ${item.judul}
-          </h3>
-          <p class="text-xs font-semibold text-blue-600 mt-1">Karya: ${item.nama}</p>
-          <p class="text-xs text-slate-600 mt-2.5 line-clamp-2 leading-relaxed flex-1">
-            ${item.deskripsi}
-          </p>
+        if (appState.workers.length >= 20) {
+            alert('Batas maksimal ruang kerja adalah 20 pekerja!');
+            return;
+        }
+        
+        const newWorker = {
+            id: Date.now(),
+            name: name
+        };
+        
+        appState.workers.push(newWorker);
+        newWorkerNameInput.value = '';
+        renderApp();
+    });
 
-          <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
-            <button onclick="beriApresiasi(${item.id})" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-rose-600 transition-colors">
-              <i data-lucide="heart" class="w-4 h-4 text-rose-500 fill-rose-500"></i>
-              <span>${item.apresiasi} Apresiasi</span>
-            </button>
-            <button onclick="openDetail(${item.id})" class="text-xs font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
-              Lihat Detail
-              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-      </article>
-    `;
-  }).join('');
-
-  lucide.createIcons();
+    // 3. Form Pembuatan Tugas Baru
+    const createTaskForm = document.getElementById('createTaskForm');
+    createTaskForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('taskTitle').value;
+        const assignee = document.getElementById('taskAssignee').value;
+        const kpi = parseInt(document.getElementById('taskKpi').value) || 10;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const desc = document.getElementById('taskDesc').value;
+        
+        if (!assignee) {
+            alert('Harap tambahkan minimal 1 pekerja terlebih dahulu.');
+            return;
+        }
+        
+        const newTask = {
+            id: 'task-' + Date.now(),
+            title,
+            assignee,
+            kpi,
+            startDate,
+            endDate,
+            desc,
+            status: 'todo',
+            reportNotes: '',
+            reportFile: ''
+        };
+        
+        appState.tasks.push(newTask);
+        createTaskForm.reset();
+        renderApp();
+        alert('Tugas baru berhasil dibagikan ke ruang kerja!');
+    });
 }
 
-// ================= RENDER JEJAK PKL =================
-function renderPKL() {
-  const grid = document.getElementById('pkl-grid');
-  if (!grid) return;
-
-  const filtered = pklList.filter(item => {
-    return currentPklFilter === 'Semua' || item.jurusan === currentPklFilter;
-  });
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-sm">Belum ada ulasan PKL untuk jurusan ini. Jadilah yang pertama membagikan pengalaman!</div>`;
-    return;
-  }
-
-  grid.innerHTML = filtered.map(item => {
-    const kodeJurusan = singkatanJurusan[item.jurusan] || item.jurusan;
-    return `
-      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between">
-        <div>
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <span class="px-3 py-1 rounded-lg text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              ${kodeJurusan}
-            </span>
-            <span class="inline-flex items-center gap-1 text-xs font-semibold text-slate-400">
-              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i>
-              ${item.kota}
-            </span>
-          </div>
-
-          <h3 class="font-display text-lg font-bold text-white">${item.tempat}</h3>
-          <p class="text-xs text-amber-400 font-semibold mt-0.5">Oleh: ${item.nama}</p>
-
-          <p class="text-sm text-slate-300 mt-3.5 leading-relaxed">
-            "${item.cerita}"
-          </p>
-        </div>
-
-        <div class="mt-5 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25">
-          <div class="flex items-center gap-1.5 text-xs font-bold text-amber-300 mb-1">
-            <i data-lucide="lightbulb" class="w-4 h-4"></i>
-            Tips Lolos & Persiapan Adik Kelas:
-          </div>
-          <p class="text-xs text-slate-200 leading-relaxed">
-            ${item.tips}
-          </p>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  lucide.createIcons();
+function updateDriveStatusUI(statusElement) {
+    if (appState.mentorDriveLink) {
+        statusElement.textContent = 'Status: Terhubung ke Drive Mentor';
+        statusElement.style.color = 'var(--success)';
+    } else {
+        statusElement.textContent = 'Status: Belum ada folder tertaut.';
+        statusElement.style.color = 'var(--danger)';
+    }
 }
 
-function beriApresiasi(id) {
-  const index = karyaList.findIndex(k => k.id === id);
-  if (index !== -1) {
-    karyaList[index].apresiasi += 1;
+function updateWorkerDisplay() {
+    const workerCountDisplay = document.getElementById('workerCountDisplay');
+    const workerList = document.getElementById('workerList');
+    
+    workerCountDisplay.textContent = `Pekerja: ${appState.workers.length} / 20`;
+    workerList.innerHTML = '';
+    
+    appState.workers.forEach(worker => {
+        const li = document.createElement('li');
+        li.className = 'worker-tag-item';
+        li.innerHTML = `
+            <span>${worker.name}</span>
+            ${appState.currentRole === 'mentor' ? `<button onclick="removeWorker(${worker.id})">&times;</button>` : ''}
+        `;
+        workerList.appendChild(li);
+    });
+}
+
+function removeWorker(id) {
+    if (appState.workers.length <= 1) {
+        alert('Ruang kerja minimal harus memiliki 1 pekerja.');
+        return;
+    }
+    appState.workers = appState.workers.filter(w => w.id !== id);
+    renderApp();
+}
+
+function renderTaskAssigneeOptions() {
+    const select = document.getElementById('taskAssignee');
+    select.innerHTML = '';
+    
+    appState.workers.forEach(worker => {
+        const option = document.createElement('option');
+        option.value = worker.name;
+        option.textContent = worker.name;
+        select.appendChild(option);
+    });
+}
+
+// =========================================================================
+// FITUR TARGET HARIAN & KPI PEKERJA
+// =========================================================================
+function initWorkerControls() {
+    const saveDailyGoalBtn = document.getElementById('saveDailyGoalBtn');
+    const dailyGoalInput = document.getElementById('dailyGoalInput');
+    const dailyGoalDisplay = document.getElementById('dailyGoalDisplay');
+    
+    // Ambil target hari ini (berdasarkan tanggal sistem)
+    const todayKey = new Date().toISOString().split('T')[0];
+    if (appState.dailyGoals[todayKey]) {
+        dailyGoalInput.value = appState.dailyGoals[todayKey];
+        dailyGoalDisplay.textContent = `Target Hari Ini: ${appState.dailyGoals[todayKey]}`;
+        dailyGoalDisplay.classList.remove('hidden');
+    } else {
+        dailyGoalDisplay.textContent = 'Belum ada target dicatat hari ini.';
+    }
+    
+    saveDailyGoalBtn.addEventListener('click', () => {
+        const goal = dailyGoalInput.value.trim();
+        if (!goal) return;
+        
+        appState.dailyGoals[todayKey] = goal;
+        saveToLocalStorage();
+        dailyGoalDisplay.textContent = `Target Hari Ini: ${goal}`;
+        alert('Target harian berhasil dicatat! Pertahankan semangat kerja.');
+    });
+}
+
+function updateKpiProgress() {
+    let totalKpi = 0;
+    let achievedKpi = 0;
+    
+    appState.tasks.forEach(task => {
+        totalKpi += task.kpi;
+        if (task.status === 'done') {
+            achievedKpi += task.kpi;
+        }
+    });
+    
+    const percentage = totalKpi === 0 ? 0 : Math.round((achievedKpi / totalKpi) * 100);
+    
+    document.getElementById('kpiProgressText').textContent = `${achievedKpi} dari ${totalKpi} Poin KPI Tim Tercapai (${percentage}%)`;
+    document.getElementById('kpiProgressBar').style.width = `${percentage}%`;
+}
+
+// =========================================================================
+// PAPAN KANBAN & MANAJEMEN KARTU TUGAS
+// =========================================================================
+function renderKanbanBoard() {
+    const statuses = ['todo', 'progress', 'review', 'done'];
+    
+    statuses.forEach(status => {
+        const listContainer = document.getElementById(`list-${status}`);
+        const countBadge = document.getElementById(`count-${status}`);
+        listContainer.innerHTML = '';
+        
+        const filteredTasks = appState.tasks.filter(t => t.status === status);
+        countBadge.textContent = filteredTasks.length;
+        
+        filteredTasks.forEach(task => {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.innerHTML = `
+                <div class="task-card-header">
+                    <span class="task-title">${escapeHtml(task.title)}</span>
+                    <span class="task-kpi-badge">KPI: ${task.kpi} Poin</span>
+                </div>
+                <p class="task-desc">${escapeHtml(task.desc)}</p>
+                <div class="task-meta">
+                    <span><strong>Pekerja:</strong> ${escapeHtml(task.assignee)}</span>
+                    <span><strong>Deadline:</strong> ${task.startDate} s/d ${task.endDate}</span>
+                    ${task.reportNotes ? `<span><strong>Laporan:</strong> ${escapeHtml(task.reportNotes)}</span>` : ''}
+                    ${task.reportFile ? `<span><strong>File:</strong> 📎 ${escapeHtml(task.reportFile)}</span>` : ''}
+                </div>
+                <div class="task-actions">
+                    ${getTaskActionButtons(task)}
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+    });
+}
+
+function getTaskActionButtons(task) {
+    if (task.status === 'todo') {
+        return `<button class="btn-action primary" onclick="moveTask('${task.id}', 'progress')">Mulai Kerjakan</button>`;
+    } else if (task.status === 'progress') {
+        return `<button class="btn-action primary" onclick="openReportModal('${task.id}')">Kirim Laporan & File</button>`;
+    } else if (task.status === 'review') {
+        if (appState.currentRole === 'mentor') {
+            return `
+                <button class="btn-action primary" onclick="moveTask('${task.id}', 'done')">Setujui (Done)</button>
+                <button class="btn-action" onclick="moveTask('${task.id}', 'progress')">Revisi</button>
+            `;
+        } else {
+            return `<span class="status-text">Menunggu validasi mentor...</span>`;
+        }
+    } else if (task.status === 'done') {
+        return `<span class="status-text" style="color:var(--success); font-weight:600;">✓ Tugas Selesai</span>`;
+    }
+    return '';
+}
+
+function moveTask(taskId, newStatus) {
+    const task = appState.tasks.find(t => t.id === taskId);
+    if (task) {
+        task.status = newStatus;
+        renderApp();
+    }
+}
+
+// =========================================================================
+// MODAL UNGGAH LAPORAN & SIMULASI AUTO-DRIVE SYNC
+// =========================================================================
+function initModalHandlers() {
+    const modal = document.getElementById('reportModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const form = document.getElementById('submitReportForm');
+    
+    closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const taskId = document.getElementById('reportTaskId').value;
+        const notes = document.getElementById('reportNotes').value;
+        const fileInput = document.getElementById('reportFile');
+        const fileName = fileInput.files[0] ? fileInput.files[0].name : 'laporan_tugas.pdf';
+        
+        const task = appState.tasks.find(t => t.id === taskId);
+        if (task) {
+            task.reportNotes = notes;
+            task.reportFile = fileName;
+            task.status = 'review'; // Masuk ke kolom review mentor
+            
+            saveToLocalStorage();
+            modal.classList.add('hidden');
+            form.reset();
+            renderApp();
+            
+            // Simulasi Auto-Drive Sync
+            if (appState.mentorDriveLink) {
+                alert(`Sukses! File "${fileName}" dan laporan telah otomatis disinkronkan ke Google Drive Mentor.`);
+            } else {
+                alert('Laporan berhasil dikirim, namun Mentor belum menautkan folder Google Drive.');
+            }
+        }
+    });
+}
+
+function openReportModal(taskId) {
+    const modal = document.getElementById('reportModal');
+    document.getElementById('reportTaskId').value = taskId;
+    modal.classList.remove('hidden');
+}
+
+// Fungsi Keamanan Dasar Mencegah XSS pada Input Teks
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, "&amp;")
+               .replace(/</g, "&lt;")
+               .replace(/>/g, "&gt;")
+               .replace(/"/g, "&quot;")
+               .replace(/'/g, "&#039;");
+}
