@@ -4,21 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Workspace - Task & KPI Tracker</title>
-
-    <!-- SDK Firebase Compat -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- Navbar Utama & Switcher Peran -->
     <header class="navbar">
         <div class="brand">
             <h1>WorkSpace<span>Pro</span></h1>
-            <span class="badge-capacity" id="workerCountDisplay">Pekerja: 3 / 20</span>
+            <span class="badge-capacity" id="workerCountDisplay">Pekerja: 0 / 20</span>
+            <span class="badge-live" id="liveStatus">🔴 Connecting...</span>
         </div>
         <div class="role-controls">
             <label for="roleSelector">Mode Tampilan:</label>
@@ -30,11 +25,10 @@
     </header>
 
     <main class="container">
-        
-        <!-- PANEL KHUSUS MENTOR: Konfigurasi Drive & Pembagian Tugas -->
+
+        <!-- PANEL MENTOR -->
         <section id="mentorPanel" class="panel-section">
             <div class="grid-2-col">
-                <!-- Kartu Konfigurasi Google Drive Mentor -->
                 <div class="card">
                     <h2>Konfigurasi Muara Google Drive</h2>
                     <p class="subtitle">Tautkan folder Google Drive Anda sebagai tujuan otomatis laporan pekerja.</p>
@@ -57,7 +51,6 @@
                     <ul id="workerList" class="worker-tags"></ul>
                 </div>
 
-                <!-- Kartu Pembuatan Tugas & KPI oleh Mentor -->
                 <div class="card">
                     <h2>Buat & Bagikan Tugas Baru</h2>
                     <form id="createTaskForm">
@@ -65,7 +58,6 @@
                             <label for="taskTitle">Judul Tugas</label>
                             <input type="text" id="taskTitle" required placeholder="Contoh: Pembuatan Model 3D Karakter Utama">
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="taskAssignee">Tugaskan Kepada</label>
@@ -76,7 +68,6 @@
                                 <input type="number" id="taskKpi" min="1" max="100" value="10" required>
                             </div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="startDate">Tanggal Mulai</label>
@@ -87,19 +78,17 @@
                                 <input type="date" id="endDate" required>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label for="taskDesc">Instruksi & Kriteria KPI</label>
                             <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output dan target harian yang diharapkan..."></textarea>
                         </div>
-
                         <button type="submit" class="btn-primary">Bagikan Tugas ke Ruang Kerja</button>
                     </form>
                 </div>
             </div>
         </section>
 
-        <!-- PANEL KPI & TARGET HARIAN (Dapat dilihat semua peran) -->
+        <!-- KPI SUMMARY -->
         <section class="kpi-summary-bar card">
             <div class="kpi-info">
                 <h3>Ringkasan Pencapaian KPI Ruang Kerja</h3>
@@ -110,17 +99,18 @@
                     <div class="progress-bar-fill" id="kpiProgressBar" style="width: 0%;"></div>
                 </div>
             </div>
-            <!-- Target Harian Pekerja -->
             <div id="workerDailyGoalBox" class="daily-goal-box hidden">
+                <select id="workerIdentitySelect" class="worker-select">
+                    <option value="">-- Pilih Nama Anda --</option>
+                </select>
                 <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
                 <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
                 <span id="dailyGoalDisplay" class="goal-badge"></span>
             </div>
         </section>
 
-        <!-- PAPAN KANBAN TRACKER TUGAS -->
+        <!-- KANBAN BOARD -->
         <section class="kanban-board">
-            <!-- Kolom 1: To Do -->
             <div class="kanban-column" data-status="todo">
                 <div class="column-header">
                     <h3>To Do (Tugas Baru)</h3>
@@ -128,8 +118,6 @@
                 </div>
                 <div class="task-list" id="list-todo"></div>
             </div>
-
-            <!-- Kolom 2: In Progress -->
             <div class="kanban-column" data-status="progress">
                 <div class="column-header">
                     <h3>In Progress (Dikerjakan)</h3>
@@ -137,8 +125,6 @@
                 </div>
                 <div class="task-list" id="list-progress"></div>
             </div>
-
-            <!-- Kolom 3: Review (Menunggu Validasi Mentor) -->
             <div class="kanban-column" data-status="review">
                 <div class="column-header">
                     <h3>Review & Laporan Masuk</h3>
@@ -146,8 +132,6 @@
                 </div>
                 <div class="task-list" id="list-review"></div>
             </div>
-
-            <!-- Kolom 4: Done -->
             <div class="kanban-column" data-status="done">
                 <div class="column-header">
                     <h3>Done (Selesai & Valid)</h3>
@@ -159,7 +143,7 @@
 
     </main>
 
-    <!-- MODAL UNGGAH LAPORAN PEKERJA (Simulasi Auto-Drive Upload) -->
+    <!-- MODAL LAPORAN -->
     <div id="reportModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-modal" id="closeModalBtn">&times;</span>
@@ -180,7 +164,6 @@
         </div>
     </div>
 
-    <!-- Menghubungkan ke file JavaScript eksternal -->
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
