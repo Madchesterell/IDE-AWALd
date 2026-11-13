@@ -1,6 +1,3 @@
-// ============================================================
-// 1. IMPORT
-// ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, getDoc, updateDoc, deleteDoc,
@@ -11,9 +8,6 @@ import {
   signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// ============================================================
-// 2. KONFIGURASI
-// ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyCEZ_9ni_0u9WY5fQCSsHt8RZFlijetLgs",
   authDomain: "workspace-1146e.firebaseapp.com",
@@ -28,9 +22,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// ============================================================
-// 3. STATE
-// ============================================================
 let state = {
   user: null,
   workspaceId: null,
@@ -39,15 +30,13 @@ let state = {
   workerName: null,
   driveLink: '',
   members: [],
-  tasks: []
+  tasks: [],
+  divisions: []
 };
 
 let unsubscribers = [];
 const $ = (id) => document.getElementById(id);
 
-// ============================================================
-// 4. HELPER
-// ============================================================
 function escapeHtml(str) {
   return String(str || '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -67,9 +56,6 @@ function setLiveStatus(ok) {
   el.style.color = ok ? '#16a34a' : '#dc2626';
 }
 
-// ============================================================
-// 5. VIEW SWITCHER
-// ============================================================
 function showAuthView() {
   $('authView').classList.remove('hidden');
   $('dashboardView').classList.add('hidden');
@@ -89,19 +75,37 @@ function showWorkspaceView() {
   $('dashboardView').classList.add('hidden');
   $('workspaceView').classList.remove('hidden');
   $('workspaceTitle').textContent = state.workspaceName || 'Workspace';
-  $('mentorPanel').classList.toggle('hidden', state.role !== 'mentor');
-  $('workerDailyGoalBox').classList.toggle('hidden', state.role !== 'worker');
+  
+  const isMentor = state.role === 'mentor';
+  $('mentorNavTabs').classList.toggle('hidden', !isMentor);
+  $('mentorPanel').classList.toggle('hidden', !isMentor);
+  $('workerDailyGoalBox').classList.toggle('hidden', isMentor);
+
   $('roleControls').innerHTML = `
     <span style="font-size:0.8rem;color:var(--text-muted);">
-      ${state.role === 'mentor' ? '👨‍🏫 Mentor' : '👷 Pekerja'} ·
+      ${isMentor ? '👨‍🏫 Mentor / Admin' : '👷 Pekerja'} ·
       <strong>${escapeHtml(state.workerName)}</strong>
     </span>
   `;
+
+  switchWorkspaceTab('task');
 }
 
-// ============================================================
-// 6. AUTH
-// ============================================================
+function switchWorkspaceTab(tabName) {
+  if (tabName === 'task') {
+    $('mainTaskContainer').classList.remove('hidden');
+    $('divisionManagementPanel').classList.add('hidden');
+    $('tabTaskView').className = 'btn-primary';
+    $('tabDivisionView').className = 'btn-secondary';
+  } else {
+    $('mainTaskContainer').classList.add('hidden');
+    $('divisionManagementPanel').classList.remove('hidden');
+    $('tabTaskView').className = 'btn-secondary';
+    $('tabDivisionView').className = 'btn-primary';
+    renderDivisionManagement();
+  }
+}
+
 function toggleAuthMode() {
   const isLogin = !$('loginForm').classList.contains('hidden');
   $('loginForm').classList.toggle('hidden', isLogin);      
@@ -171,9 +175,6 @@ async function handleLogout() {
   await signOut(auth);
 }
 
-// ============================================================
-// 7. DASHBOARD — LOAD WORKSPACES
-// ============================================================
 async function loadUserWorkspaces() {
   const list = $('workspaceList');
   list.innerHTML = '<p class="empty-hint">Memuat workspace...</p>';
@@ -217,9 +218,6 @@ function renderWorkspaceList(workspaces) {
   `).join('');
 }
 
-// ============================================================
-// 8. CREATE WORKSPACE (FAST)
-// ============================================================
 async function handleCreateWorkspace(e) {
   e.preventDefault();
   const name = $('newWorkspaceName').value.trim();
@@ -248,7 +246,7 @@ async function handleCreateWorkspace(e) {
     Promise.all([
       setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
         uid: state.user.uid, email: state.user.email,
-        name: state.workerName, role: 'mentor', joinedAt: serverTimestamp()
+        name: state.workerName, role: 'mentor', division: 'Manajemen', joinedAt: serverTimestamp()
       }),
       setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true })
     ]).catch(err => console.error('Background update gagal:', err));
@@ -261,9 +259,6 @@ async function handleCreateWorkspace(e) {
   }
 }
 
-// ============================================================
-// 9. JOIN WORKSPACE
-// ============================================================
 async function handleJoinWorkspace(e) {
   e.preventDefault();
   const code = $('joinCodeInput').value.trim().toUpperCase();
@@ -287,7 +282,7 @@ async function handleJoinWorkspace(e) {
     const myName = state.user.displayName || state.user.email.split('@')[0];
     await setDoc(doc(db, 'workspaces', wsDoc.id, 'members', state.user.uid), {
       uid: state.user.uid, email: state.user.email,
-      name: myName, role: 'worker', joinedAt: serverTimestamp()
+      name: myName, role: 'worker', division: 'Umum', joinedAt: serverTimestamp()
     });
     setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
 
@@ -307,9 +302,6 @@ async function handleJoinWorkspace(e) {
   }
 }
 
-// ============================================================
-// 10. OPEN WORKSPACE
-// ============================================================
 window.openWorkspace = async (workspaceId) => {
   try {
     const wsSnap = await getDoc(doc(db, 'workspaces', workspaceId));
@@ -336,12 +328,10 @@ function backToDashboard() {
   state.role = null;
   state.members = [];
   state.tasks = [];
+  state.divisions = [];
   showDashboardView();
 }
 
-// ============================================================
-// 11. SUBSCRIBE WORKSPACE DATA
-// ============================================================
 function subscribeToWorkspace() {
   unsubscribers.forEach(u => u());
   unsubscribers = [];
@@ -357,6 +347,15 @@ function subscribeToWorkspace() {
       setLiveStatus(true);
     },
     (err) => { console.error(err); setLiveStatus(false); }
+  ));
+
+  const divisionsRef = collection(db, 'workspaces', state.workspaceId, 'divisions');
+  unsubscribers.push(onSnapshot(divisionsRef,
+    (snap) => {
+      state.divisions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderDivisionOptions();
+    },
+    (err) => { console.error(err); }
   ));
 
   const tasksRef = collection(db, 'workspaces', state.workspaceId, 'tasks');
@@ -380,17 +379,12 @@ function subscribeToWorkspace() {
   ));
 }
 
-// ============================================================
-// 12. RENDER
-// ============================================================
 function renderMembers() {
   const list = $('workerList');
   if (!list) return;
   list.innerHTML = state.members.map(m => `
     <li class="worker-tag">
-      ${escapeHtml(m.name)} ${m.role === 'mentor' ? '👨‍🏫' : ''}
-      ${state.role === 'mentor' && m.role !== 'mentor'
-        ? `<button class="remove-worker" onclick="removeMember('${m.id}')">×</button>` : ''}
+      ${escapeHtml(m.name)} (${escapeHtml(m.division || 'Umum')}) ${m.role === 'mentor' ? '👨‍🏫' : ''}
     </li>
   `).join('') || '<li class="empty-hint">Belum ada anggota.</li>';
 }
@@ -423,49 +417,84 @@ function updateDriveStatus() {
   if (inputEl) inputEl.value = state.driveLink;
 }
 
-function renderKanban() {
-  ['todo', 'progress', 'review', 'done'].forEach(status => {
-    let filtered = state.tasks.filter(t => t.status === status);
-    if (state.role === 'worker') filtered = filtered.filter(t => t.assignee === state.workerName);
-    $('count-' + status).textContent = filtered.length;
-    $('list-' + status).innerHTML = filtered.map(renderTaskCard).join('') ||
-      '<p class="empty-hint">Kosong</p>';
-  });
+function renderDivisionOptions() {
+  const selectDiv = $('editMemberDivision');
+  if (!selectDiv) return;
+  const defaultOpts = '<option value="Umum">(Umum)</option>';
+  selectDiv.innerHTML = defaultOpts + state.divisions.map(d => `<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
 }
 
-function renderTaskCard(task) {
-  const isOverdue = task.endDate && new Date(task.endDate) < new Date() && task.status !== 'done';
-  const isWorker = state.role === 'worker';
-  const isMentor = state.role === 'mentor';
-  const canStart = isWorker && task.status === 'todo' && task.assignee === state.workerName;
-  const canReport = isWorker && task.status === 'progress' && task.assignee === state.workerName;
-  const canValidate = isMentor && task.status === 'review';
-  const canReopen = isMentor && task.status === 'done';
+// Render Tabel Daftar Tugas Horizontal (Gambar 1)
+function renderKanban() {
+  const tbody = $('taskTableBody');
+  if (!tbody) return;
 
-  return `
-    <div class="task-card ${isOverdue ? 'overdue' : ''}">
-      <div class="task-header">
-        <h4>${escapeHtml(task.title)}</h4>
-        <span class="kpi-badge">${task.kpi} KPI</span>
-      </div>
-      ${task.desc ? `<p class="task-desc">${escapeHtml(task.desc)}</p>` : ''}
-      <div class="task-meta">
-        <span>👤 ${escapeHtml(task.assignee)}</span>
-        <span>📅 ${task.startDate || '-'} → ${task.endDate || '-'}</span>
-      </div>
-      ${task.reportNotes ? `
-        <div class="task-report">
-          <strong>📎 Laporan:</strong> ${escapeHtml(task.reportNotes)}
-          ${task.reportFileLink ? `<br><a href="${escapeHtml(task.reportFileLink)}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">🔗 Buka Tautan Google Drive</a>` : ''}
-        </div>` : ''}
-      <div class="task-actions">
-        ${canStart ? `<button class="btn-sm" onclick="moveTask('${task.id}','progress')">▶ Mulai</button>` : ''}
-        ${canReport ? `<button class="btn-sm" onclick="openReportModal('${task.id}')">📤 Kirim Laporan</button>` : ''}
-        ${canValidate ? `<button class="btn-sm btn-success" onclick="moveTask('${task.id}','done')">✅ Validasi</button>
-                         <button class="btn-sm btn-warning" onclick="moveTask('${task.id}','progress')">↩ Revisi</button>` : ''}
-        ${canReopen ? `<button class="btn-sm btn-warning" onclick="moveTask('${task.id}','review')">↩ Buka Kembali</button>` : ''}
-      </div>
-    </div>`;
+  let filteredTasks = state.tasks;
+  if (state.role === 'worker') {
+    filteredTasks = state.tasks.filter(t => t.assignee === state.workerName);
+  }
+
+  if (filteredTasks.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">Belum ada tugas dalam daftar.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filteredTasks.map(task => {
+    const isOverdue = task.endDate && new Date(task.endDate) < new Date() && task.status !== 'done';
+    const isWorker = state.role === 'worker';
+    const isMentor = state.role === 'mentor';
+    
+    const canStart = isWorker && task.status === 'todo' && task.assignee === state.workerName;
+    const canReport = isWorker && task.status === 'progress' && task.assignee === state.workerName;
+    const canValidate = isMentor && task.status === 'review';
+    const canReopen = isMentor && task.status === 'done';
+
+    let statusBg = '#f3f4f6';
+    let statusColor = '#374151';
+    let statusText = 'To Do';
+    if (task.status === 'progress') { statusBg = '#dbeafe'; statusColor = '#1e40af'; statusText = 'In Progress'; }
+    else if (task.status === 'review') { statusBg = '#f3e8ff'; statusColor = '#6b21a8'; statusText = 'Dinilai'; }
+    else if (task.status === 'done') { statusBg = '#dcfce7'; statusColor = '#15803d'; statusText = 'Selesai'; }
+
+    let diffBg = '#fef3c7';
+    let diffColor = '#92400e';
+    let diffText = 'Sedang';
+    const kpiVal = Number(task.kpi) || 10;
+    if (kpiVal > 15) { diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi'; }
+    else if (kpiVal < 8) { diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah'; }
+
+    return `
+      <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='transparent'">
+        <td style="padding: 14px 16px;">
+          <div style="font-weight: 600; color: #1f2937; font-size: 0.92rem;">${escapeHtml(task.title)}</div>
+          <div style="font-size: 0.78rem; color: #6b7280; margin-top: 2px;">${escapeHtml(task.desc || 'Tanpa keterangan tambahan')}</div>
+          ${task.reportFileLink ? `<a href="${escapeHtml(task.reportFileLink)}" target="_blank" style="font-size: 0.75rem; color: #2563eb; text-decoration: underline; display: inline-block; margin-top: 2px;">🔗 Lihat File Drive</a>` : ''}
+          ${task.revisionNotes ? `<div style="font-size: 0.75rem; color: #92400e; background: #fffbeb; padding: 2px 6px; border-radius: 4px; margin-top: 2px;">⚠️ Revisi: ${escapeHtml(task.revisionNotes)}</div>` : ''}
+        </td>
+        <td style="padding: 14px 16px; font-size: 0.88rem; color: #4b5563;">
+          <div>${escapeHtml(task.assignee)}</div>
+          <div style="font-size: 0.75rem; color: #9ca3af;">(Anggota Tim)</div>
+        </td>
+        <td style="padding: 14px 16px;">
+          <span style="background: ${diffBg}; color: ${diffColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${diffText} (${kpiVal})</span>
+        </td>
+        <td style="padding: 14px 16px;">
+          <span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${statusText}</span>
+        </td>
+        <td style="padding: 14px 16px; font-size: 0.85rem; color: ${isOverdue ? '#dc2626' : '#4b5563'}; font-weight: ${isOverdue ? '600' : '400'};">
+          ${task.endDate || '-'}
+        </td>
+        <td style="padding: 14px 16px; text-align: right;">
+          <div style="display: flex; justify-content: flex-end; gap: 6px;">
+            ${canStart ? `<button class="btn-sm" style="font-size: 0.75rem; padding: 4px 10px;" onclick="moveTask('${task.id}','progress')">▶ Mulai</button>` : ''}
+            ${canReport ? `<button class="btn-sm" style="font-size: 0.75rem; padding: 4px 10px;" onclick="openReportModal('${task.id}')">📤 Lapor</button>` : ''}
+            ${canValidate ? `<button class="btn-sm btn-success" style="font-size: 0.75rem; padding: 4px 10px;" onclick="openReviewModal('${task.id}')">Detail & Nilai</button>` : ''}
+            ${canReopen ? `<button class="btn-sm btn-warning" style="font-size: 0.75rem; padding: 4px 10px;" onclick="moveTask('${task.id}','review')">↩ Buka</button>` : ''}
+            ${!canStart && !canReport && !canValidate && !canReopen ? `<span style="font-size: 0.75rem; color: #9ca3af;">-</span>` : ''}
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
 }
 
 function updateKpiProgress() {
@@ -501,9 +530,58 @@ function setDefaultDates() {
   if (endEl) endEl.valueAsDate = nextWeek;
 }
 
-// ============================================================
-// 13. ACTIONS
-// ============================================================
+function renderDivisionManagement() {
+  const divListContainer = $('divisionListContainer');
+  if (divListContainer) {
+    divListContainer.innerHTML = state.divisions.length === 0 ? '<p class="empty-hint">Belum ada divisi terdaftar.</p>' :
+      state.divisions.map(d => {
+        const countEmp = state.members.filter(m => m.division === d.name).length;
+        return `
+          <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #fff;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h4 style="margin: 0; font-size: 1rem; color: #1f2937;">${escapeHtml(d.name)}</h4>
+                <p style="margin: 4px 0 8px 0; font-size: 0.8rem; color: #6b7280;">${escapeHtml(d.desc || 'Tidak ada deskripsi.')}</p>
+              </div>
+              <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${countEmp} Karyawan</span>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+              <button class="btn-sm btn-warning" onclick="deleteDivision('${d.id}')" style="font-size: 0.7rem;">Hapus</button>
+            </div>
+          </div>`;
+      }).join('');
+  }
+
+  const tableBody = $('memberSettingsTableBody');
+  if (tableBody) {
+    tableBody.innerHTML = state.members.map(m => `
+      <tr style="border-bottom: 1px solid #f3f4f6;">
+        <td style="padding: 10px; font-weight: 500;">${escapeHtml(m.name)}</td>
+        <td style="padding: 10px; color: #6b7280; font-size: 0.85rem;">${escapeHtml(m.email)}</td>
+        <td style="padding: 10px;"><span class="role-badge ${m.role}">${m.role === 'mentor' ? 'Manager/Mentor' : 'Employee'}</span></td>
+        <td style="padding: 10px; font-size: 0.85rem;">${escapeHtml(m.division || 'Umum')}</td>
+        <td style="padding: 10px;"><button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button></td>
+      </tr>`).join('');
+  }
+}
+
+window.deleteDivision = async (divId) => {
+  if (!confirm('Hapus divisi ini?')) return;
+  try {
+    await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'divisions', divId));
+  } catch (err) { alert('Gagal: ' + err.message); }
+};
+
+window.openEditMemberModal = (memberId) => {
+  const mem = state.members.find(m => m.id === memberId);
+  if (!mem) return;
+  $('editMemberId').value = mem.id;
+  $('editMemberNameDisplay').value = mem.name;
+  $('editMemberRole').value = mem.role;
+  $('editMemberDivision').value = mem.division || 'Umum';
+  $('editMemberModal').classList.remove('hidden');
+};
+
 window.moveTask = async (taskId, newStatus) => {
   try {
     await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
@@ -512,21 +590,47 @@ window.moveTask = async (taskId, newStatus) => {
   } catch (err) { alert('Gagal: ' + err.message); }
 };
 
-window.removeMember = async (memberId) => {
-  if (!confirm('Hapus anggota ini dari workspace?')) return;
-  try {
-    await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'members', memberId));
-  } catch (err) { alert('Gagal: ' + err.message); }
-};
-
 window.openReportModal = (taskId) => {
   $('reportTaskId').value = taskId;
+  const task = state.tasks.find(t => t.id === taskId);
+  const container = $('reportDriveContainer');
+  const subtitle = $('reportModalSubtitle');
+
+  if (task && task.driveSource === 'workspace') {
+    subtitle.textContent = "Unggah file Anda ke folder Google Drive Utama yang disediakan Mentor.";
+    container.innerHTML = `
+      <label>Tautan Folder Google Drive Utama Mentor</label>
+      <div style="padding: 10px; background: rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 8px;">
+        ${state.driveLink ? `
+          <a href="${escapeHtml(state.driveLink)}" target="_blank" style="color: var(--primary-color); font-weight: 600; text-decoration: underline;">
+            📂 Buka Folder Drive Utama Workspace
+          </a>
+          <input type="hidden" id="reportDriveLink" value="${escapeHtml(state.driveLink)}">
+        ` : `
+          <span style="color: #dc2626; font-size: 0.85rem;">⚠️ Mentor belum mengatur Link Google Drive Utama. Silakan masukkan link manual:</span>
+          <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required style="margin-top:5px;">
+        `}
+      </div>
+      <small style="color: var(--text-muted);">Masukkan file ke folder di atas, lalu tulis catatan dan kirim laporan.</small>
+    `;
+  } else {
+    subtitle.textContent = "Masukkan tautan Google Drive khusus untuk file tugas ini.";
+    container.innerHTML = `
+      <label for="reportDriveLink">Tautan File Google Drive Tugas</label>
+      <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required />
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Tempelkan tautan file atau folder tugas yang sudah diunggah ke Drive.</small>
+    `;
+  }
+
   $('reportModal').classList.remove('hidden');
 };
 
-// ============================================================
-// 14. EVENT LISTENERS
-// ============================================================
+window.openReviewModal = (taskId) => {
+  $('reviewTaskId').value = taskId;
+  $('mentorReviewNotes').value = '';
+  $('reviewModal').classList.remove('hidden');
+};
+
 function setupEventListeners() {
   $('loginForm').addEventListener('submit', handleLogin);
   $('registerForm').addEventListener('submit', handleRegister);
@@ -538,6 +642,9 @@ function setupEventListeners() {
   $('createWorkspaceForm').addEventListener('submit', handleCreateWorkspace);
   $('joinWorkspaceForm').addEventListener('submit', handleJoinWorkspace);
   $('backToDashboardBtn').addEventListener('click', backToDashboard);
+
+  $('tabTaskView').addEventListener('click', () => switchWorkspaceTab('task'));
+  $('tabDivisionView').addEventListener('click', () => switchWorkspaceTab('division'));
 
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -558,14 +665,11 @@ function setupEventListeners() {
     } catch (err) { alert('Gagal: ' + err.message); }
   });
 
-  $('addWorkerBtn').addEventListener('click', () => {
-    alert('Untuk menambah pekerja: bagikan kode undangan workspace ke mereka.\n\nKode undangan bisa dilihat di Dashboard.');
-  });
-
   $('createTaskForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = $('taskTitle').value.trim();
     const assignee = $('taskAssignee').value;
+    const driveSource = $('taskDriveSource').value;
     if (!title || !assignee) return alert('Judul & assignee wajib diisi!');
     try {
       await addDoc(collection(db, 'workspaces', state.workspaceId, 'tasks'), {
@@ -574,13 +678,15 @@ function setupEventListeners() {
         startDate: $('startDate').value,
         endDate: $('endDate').value,
         desc: $('taskDesc').value.trim(),
+        driveSource: driveSource,
         status: 'todo',
-        reportNotes: '', reportFileLink: '',
+        reportNotes: '', reportFileLink: '', revisionNotes: '',
         createdAt: serverTimestamp(), updatedAt: serverTimestamp()
       });
       e.target.reset();
       $('taskKpi').value = 10;
       setDefaultDates();
+      alert('✅ Tugas berhasil dibagikan!');
     } catch (err) { alert('Gagal: ' + err.message); }
   });
 
@@ -588,7 +694,8 @@ function setupEventListeners() {
     e.preventDefault();
     const taskId = $('reportTaskId').value;
     const notes = $('reportNotes').value.trim();
-    const reportLink = $('reportDriveLink').value.trim();
+    const reportLinkEl = $('reportDriveLink');
+    const reportLink = reportLinkEl ? reportLinkEl.value.trim() : (state.driveLink || '');
 
     if (!reportLink) return alert('Tautan Google Drive wajib diisi!');
 
@@ -597,18 +704,76 @@ function setupEventListeners() {
         status: 'review',
         reportNotes: notes,
         reportFileLink: reportLink,
+        revisionNotes: '',
         updatedAt: serverTimestamp()
       });
       $('reportModal').classList.add('hidden');
       e.target.reset();
-      alert('✅ Tautan laporan terkirim ke Mentor!');
+      alert('✅ Laporan terkirim ke Mentor!');
     } catch (err) { 
       alert('Gagal: ' + err.message); 
     }
   });
 
-  $('closeModalBtn').addEventListener('click', () => {
-    $('reportModal').classList.add('hidden');
+  $('btnValidateDone').addEventListener('click', async () => {
+    const taskId = $('reviewTaskId').value;
+    try {
+      await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
+        status: 'done',
+        revisionNotes: '',
+        updatedAt: serverTimestamp()
+      });
+      $('reviewModal').classList.add('hidden');
+      alert('✅ Tugas divalidasi selesai (Done)!');
+    } catch (err) { alert('Gagal: ' + err.message); }
+  });
+
+  $('btnSendRevision').addEventListener('click', async () => {
+    const taskId = $('reviewTaskId').value;
+    const revNotes = $('mentorReviewNotes').value.trim();
+    if (!revNotes) return alert('Catatan revisi wajib diisi jika ingin meminta revisi.');
+
+    try {
+      await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
+        status: 'progress',
+        revisionNotes: revNotes,
+        updatedAt: serverTimestamp()
+      });
+      $('reviewModal').classList.add('hidden');
+      alert('↩ Catatan revisi dikirimkan ke pekerja!');
+    } catch (err) { alert('Gagal: ' + err.message); }
+  });
+
+  $('closeModalBtn').addEventListener('click', () => $('reportModal').classList.add('hidden'));
+  $('closeReviewModalBtn').addEventListener('click', () => $('reviewModal').classList.add('hidden'));
+
+  $('createDivisionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('newDivisionName').value.trim();
+    const desc = $('newDivisionDesc').value.trim();
+    if (!name) return alert('Nama divisi wajib diisi.');
+    try {
+      await addDoc(collection(db, 'workspaces', state.workspaceId, 'divisions'), {
+        name, desc, createdAt: serverTimestamp()
+      });
+      e.target.reset();
+      alert('✅ Divisi baru berhasil dibuat!');
+    } catch (err) { alert('Gagal: ' + err.message); }
+  });
+
+  $('editMemberForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const memId = $('editMemberId').value;
+    const newRole = $('editMemberRole').value;
+    const newDiv = $('editMemberDivision').value;
+    try {
+      await updateDoc(doc(db, 'workspaces', state.workspaceId, 'members', memId), {
+        role: newRole,
+        division: newDiv
+      });
+      $('editMemberModal').classList.add('hidden');
+      alert('✅ Data anggota diperbarui!');
+    } catch (err) { alert('Gagal: ' + err.message); }
   });
 
   $('saveDailyGoalBtn').addEventListener('click', async () => {
@@ -624,9 +789,6 @@ function setupEventListeners() {
   });
 }
 
-// ============================================================
-// 15. INIT + AUTH STATE
-// ============================================================
 function init() {
   setDefaultDates();
   setupEventListeners();
@@ -654,7 +816,6 @@ async function ensureUserDoc(user) {
         workspaceIds: [],
         createdAt: serverTimestamp()
       });
-      console.log('[DEBUG] Dokumen user dibuat untuk:', user.email);
     }
   } catch (err) {
     console.error('[DEBUG] Gagal cek/buat dokumen user:', err);
