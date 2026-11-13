@@ -234,12 +234,12 @@
     </div>
 </div>
 
-<!-- ============ MODAL: LAPORAN ============ -->
+<!-- ============ MODAL: LAPORAN (DIUBAH KE LINK DRIVE) ============ -->
 <div id="reportModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" id="closeModalBtn">&times;</span>
         <h2>Kirim Laporan & Bukti Kerja</h2>
-        <p class="subtitle">File akan otomatis diteruskan ke folder Google Drive Mentor.</p>
+        <p class="subtitle">Masukkan tautan Google Drive hasil pengerjaan tugas Anda.</p>
         <form id="submitReportForm">
             <input type="hidden" id="reportTaskId">
             <div class="form-group">
@@ -247,10 +247,11 @@
                 <textarea id="reportNotes" rows="3" required placeholder="Jelaskan bagian yang sudah dikerjakan..."></textarea>
             </div>
             <div class="form-group">
-                <label for="reportFile">Pilih File Laporan</label>
-                <input type="file" id="reportFile" required>
+                <label for="reportDriveLink">Tautan File Google Drive</label>
+                <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required />
+                <small style="color: var(--text-muted); font-size: 0.75rem;">Tempelkan tautan file atau folder tugas yang sudah diunggah ke Drive.</small>
             </div>
-            <button type="submit" class="btn-primary">Unggah & Kirim ke Drive Mentor</button>
+            <button type="submit" class="btn-primary">Kirim Laporan ke Mentor</button>
         </form>
     </div>
 </div>
