@@ -9,19 +9,62 @@
 </head>
 <body>
 
+    <!-- ============ AUTH GATE (PINTU MASUK) ============ -->
+<div id="authContainer" class="auth-gate-modal hidden">
+    <div class="auth-card">
+        <h2>Digital Workspace Portal</h2>
+        <p class="subtitle">Masuk ke ruang kerja atau buat ruang baru sebagai Mentor.</p>
+
+        <div class="auth-tabs">
+            <button type="button" class="tab-btn active" data-tab="join" onclick="switchAuthTab('join')">Gabung (Pekerja)</button>
+            <button type="button" class="tab-btn" data-tab="create" onclick="switchAuthTab('create')">Buat Ruang (Mentor)</button>
+        </div>
+
+        <!-- Form Gabung (Pekerja) -->
+        <form id="joinRoomForm" class="auth-form">
+            <div class="form-group">
+                <label>Nama Ruang Kerja</label>
+                <input type="text" id="joinRoomName" required placeholder="Masukkan nama ruang...">
+            </div>
+            <div class="form-group">
+                <label>Kata Sandi Ruang Kerja</label>
+                <input type="password" id="joinRoomPass" required placeholder="Masukkan sandi...">
+            </div>
+            <div class="form-group">
+                <label>Nama Anda (Pekerja)</label>
+                <input type="text" id="joinWorkerName" required placeholder="Nama lengkap Anda...">
+            </div>
+            <button type="submit" class="btn-primary">Masuk ke Ruang Kerja</button>
+        </form>
+
+        <!-- Form Buat Ruang (Mentor) -->
+        <form id="createRoomForm" class="auth-form hidden">
+            <div class="form-group">
+                <label>Nama Ruang Kerja Baru</label>
+                <input type="text" id="newRoomName" required placeholder="Contoh: Tim Animasi SMKN 4">
+            </div>
+            <div class="form-group">
+                <label>Kata Sandi Ruang (untuk Pekerja)</label>
+                <input type="password" id="newRoomPass" required placeholder="Buat sandi rahasia...">
+            </div>
+            <div class="form-group">
+                <label>Tautan Google Drive Mentor</label>
+                <input type="url" id="newRoomDrive" placeholder="https://drive.google.com/drive/folders/...">
+            </div>
+            <button type="submit" class="btn-primary">Dirikan Ruang Kerja (Jadi Mentor)</button>
+        </form>
+    </div>
+</div>
+    <!-- ============ MAIN APP (disembunyikan sampai login) ============ -->
+<div id="mainApp" class="hidden">
+
     <header class="navbar">
         <div class="brand">
             <h1>WorkSpace<span>Pro</span></h1>
             <span class="badge-capacity" id="workerCountDisplay">Pekerja: 0 / 20</span>
             <span class="badge-live" id="liveStatus">🔴 Connecting...</span>
         </div>
-        <div class="role-controls">
-            <label for="roleSelector">Mode Tampilan:</label>
-            <select id="roleSelector">
-                <option value="mentor">Mentor (Pengawas)</option>
-                <option value="worker">Pekerja (Anggota Tim)</option>
-            </select>
-        </div>
+       <div class="role-controls" id="roleControls"></div>
     </header>
 
     <main class="container">
@@ -99,14 +142,11 @@
                     <div class="progress-bar-fill" id="kpiProgressBar" style="width: 0%;"></div>
                 </div>
             </div>
-            <div id="workerDailyGoalBox" class="daily-goal-box hidden">
-                <select id="workerIdentitySelect" class="worker-select">
-                    <option value="">-- Pilih Nama Anda --</option>
-                </select>
-                <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
-                <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
-                <span id="dailyGoalDisplay" class="goal-badge"></span>
-            </div>
+           <div id="workerDailyGoalBox" class="daily-goal-box hidden">
+    <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
+    <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
+    <span id="dailyGoalDisplay" class="goal-badge"></span>
+</div>
         </section>
 
         <!-- KANBAN BOARD -->
@@ -142,7 +182,9 @@
         </section>
 
     </main>
-
+    
+</div>
+    
     <!-- MODAL LAPORAN -->
     <div id="reportModal" class="modal hidden">
         <div class="modal-content">
