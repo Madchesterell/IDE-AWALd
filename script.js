@@ -1,4 +1,21 @@
 // =========================================================================
+// INISIALISASI FIREBASE FIRESTORE (Menggunakan konfigurasi milik Yang Mulia)
+// =========================================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyCEZ_9ni_0u9WY5fQCSsHt8RZFlijetLgs",
+    authDomain: "workspace-1146e.firebaseapp.com",
+    projectId: "workspace-1146e",
+    storageBucket: "workspace-1146e.firebasestorage.app",
+    messagingSenderId: "617778820449",
+    appId: "1:617778820449:web:8f239651dda6dfd0f8c120",
+    measurementId: "G-YZGE0SBE5V"
+};
+
+// Inisialisasi Firebase & Firestore
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// =========================================================================
 // STATE MANAGEMENT DENGAN SISTEM RUANG KERJA (ROOM & AUTH)
 // =========================================================================
 let appState = {
