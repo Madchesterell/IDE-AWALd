@@ -1,14 +1,18 @@
 // ============================================================
-// 1. IMPORT FIREBASE
+// 1. IMPORT
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
-  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, where, orderBy, getDocs, limit, serverTimestamp
+  getFirestore, collection, doc, addDoc, setDoc, getDoc, updateDoc, deleteDoc,
+  onSnapshot, query, where, orderBy, getDocs, limit, serverTimestamp, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // ============================================================
-// 2. KONFIGURASI FIREBASE
+// 2. KONFIGURASI
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyCEZ_9ni_0u9WY5fQCSsHt8RZFlijetLgs",
@@ -22,35 +26,38 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // ============================================================
-// 3. STATE APLIKASI
+// 3. STATE
 // ============================================================
 let state = {
-  roomId: null,
-  roomName: null,
-  role: null,        // 'mentor' atau 'worker'
+  user: null,
+  workspaceId: null,
+  workspaceName: null,
+  role: null,
   workerName: null,
   driveLink: '',
-  workers: [],
+  members: [],
   tasks: []
 };
 
-let unsubscribers = []; // untuk berhenti listen saat logout
+let unsubscribers = [];
+const $ = (id) => document.getElementById(id);
 
 // ============================================================
 // 4. HELPER
 // ============================================================
-const $ = (id) => document.getElementById(id);
-
 function escapeHtml(str) {
   return String(str || '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-async function hashPassword(password) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+function generateJoinCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 function setLiveStatus(ok) {
@@ -61,171 +68,299 @@ function setLiveStatus(ok) {
 }
 
 // ============================================================
-// 5. AUTH GATE
+// 5. VIEW SWITCHER
 // ============================================================
-window.switchAuthTab = function(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.classList.add('active');
-  $('joinRoomForm').classList.toggle('hidden', tab !== 'join');
-  $('createRoomForm').classList.toggle('hidden', tab !== 'create');
-};
-
-function showAuthGate() {
-  $('authContainer').classList.remove('hidden');
-  $('mainApp').classList.add('hidden');
+function showAuthView() {
+  $('authView').classList.remove('hidden');
+  $('dashboardView').classList.add('hidden');
+  $('workspaceView').classList.add('hidden');
 }
 
-function hideAuthGate() {
-  $('authContainer').classList.add('hidden');
-  $('mainApp').classList.remove('hidden');
+function showDashboardView() {
+  $('authView').classList.add('hidden');
+  $('dashboardView').classList.remove('hidden');
+  $('workspaceView').classList.add('hidden');
+  $('userEmailDisplay').textContent = state.user?.email || '';
+  loadUserWorkspaces();
 }
 
-async function handleCreateRoom(e) {
+function showWorkspaceView() {
+  $('authView').classList.add('hidden');
+  $('dashboardView').classList.add('hidden');
+  $('workspaceView').classList.remove('hidden');
+  $('workspaceTitle').textContent = state.workspaceName || 'Workspace';
+  $('mentorPanel').classList.toggle('hidden', state.role !== 'mentor');
+  $('workerDailyGoalBox').classList.toggle('hidden', state.role !== 'worker');
+  $('roleControls').innerHTML = `
+    <span style="font-size:0.8rem;color:var(--text-muted);">
+      ${state.role === 'mentor' ? '👨‍🏫 Mentor' : '👷 Pekerja'} ·
+      <strong>${escapeHtml(state.workerName)}</strong>
+    </span>
+  `;
+}
+
+// ============================================================
+// 6. AUTH
+// ============================================================
+function toggleAuthMode() {
+  const isLogin = !$('loginForm').classList.contains('hidden');
+  $('loginForm').classList.toggle('hidden', !isLogin);
+  $('registerForm').classList.toggle('hidden', isLogin);
+  $('authTitle').textContent = isLogin ? 'Buat Akun Baru' : 'Selamat Datang';
+  $('authSubtitle').textContent = isLogin
+    ? 'Daftar untuk mulai mengelola workspace Anda.'
+    : 'Masuk untuk mengakses platform evaluasi kinerja karyawan.';
+  $('authToggleText').textContent = isLogin ? 'Sudah punya akun?' : 'Belum punya akun?';
+  $('authToggleLink').textContent = isLogin ? 'Masuk di sini' : 'Daftar sekarang';
+}
+
+async function handleLogin(e) {
   e.preventDefault();
-  const roomName = $('newRoomName').value.trim();
-  const password = $('newRoomPass').value.trim();
-  const driveLink = $('newRoomDrive').value.trim();
-
-  if (!roomName || !password) return alert('Isi nama ruang dan kata sandi!');
-  if (password.length < 4) return alert('Kata sandi minimal 4 karakter.');
-
-  const btn = e.target.querySelector('button[type="submit"]');
-  btn.disabled = true;
-  btn.textContent = 'Memproses...';
-
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  const btn = $('loginBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Masuk...';
   try {
-    const roomsRef = collection(db, 'rooms');
-    const cek = await getDocs(query(roomsRef, where('roomNameLower', '==', roomName.toLowerCase()), limit(1)));
-    if (!cek.empty) {
-      alert('Nama ruang kerja sudah dipakai. Pilih nama lain.');
-      return;
-    }
-
-    const passwordHash = await hashPassword(password);
-    const roomDoc = await addDoc(roomsRef, {
-      roomName,
-      roomNameLower: roomName.toLowerCase(),
-      passwordHash,
-      mentorDriveLink: driveLink,
-      createdAt: serverTimestamp()
-    });
-
-    const session = { roomId: roomDoc.id, roomName, role: 'mentor', workerName: 'Mentor' };
-    localStorage.setItem('ws_session', JSON.stringify(session));
-    Object.assign(state, session);
-
-    await loadWorkspace();
+    await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
-    console.error(err);
-    alert('Gagal membuat ruang: ' + err.message);
+    alert('Gagal masuk: ' + mapAuthError(err.code));
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Dirikan Ruang Kerja (Jadi Mentor)';
+    btn.disabled = false; btn.textContent = original;
   }
 }
 
-async function handleJoinRoom(e) {
+async function handleRegister(e) {
   e.preventDefault();
-  const roomName = $('joinRoomName').value.trim();
-  const password = $('joinRoomPass').value.trim();
-  const workerName = $('joinWorkerName').value.trim();
+  const name = $('registerName').value.trim();
+  const email = $('registerEmail').value.trim();
+  const password = $('registerPassword').value;
+  const btn = $('registerBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Mendaftar...';
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName: name });
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      email, displayName: name, workspaceIds: [], createdAt: serverTimestamp()
+    });
+  } catch (err) {
+    alert('Gagal daftar: ' + mapAuthError(err.code));
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
+}
 
-  if (!roomName || !password || !workerName) return alert('Isi semua field!');
+function mapAuthError(code) {
+  const map = {
+    'auth/email-already-in-use': 'Email sudah terdaftar.',
+    'auth/invalid-email': 'Format email tidak valid.',
+    'auth/weak-password': 'Kata sandi minimal 6 karakter.',
+    'auth/user-not-found': 'Email tidak terdaftar.',
+    'auth/wrong-password': 'Kata sandi salah.',
+    'auth/invalid-credential': 'Email atau kata sandi salah.',
+    'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.'
+  };
+  return map[code] || code;
+}
 
-  const btn = e.target.querySelector('button[type="submit"]');
-  btn.disabled = true;
-  btn.textContent = 'Memproses...';
+async function handleLogout() {
+  if (!confirm('Keluar dari akun?')) return;
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+  await signOut(auth);
+}
+
+// ============================================================
+// 7. DASHBOARD — LOAD WORKSPACES
+// ============================================================
+async function loadUserWorkspaces() {
+  const list = $('workspaceList');
+  list.innerHTML = '<p class="empty-hint">Memuat workspace...</p>';
+  try {
+    const userSnap = await getDoc(doc(db, 'users', state.user.uid));
+    const ids = userSnap.exists() ? (userSnap.data().workspaceIds || []) : [];
+    if (ids.length === 0) {
+      list.innerHTML = '<p class="empty-hint">Belum ada workspace. Buat atau gabung dulu.</p>';
+      return;
+    }
+    const workspaces = await Promise.all(ids.map(async id => {
+      const wsSnap = await getDoc(doc(db, 'workspaces', id));
+      if (!wsSnap.exists()) return null;
+      const memberSnap = await getDoc(doc(db, 'workspaces', id, 'members', state.user.uid));
+      return {
+        id, ...wsSnap.data(),
+        role: memberSnap.exists() ? memberSnap.data().role : 'worker'
+      };
+    }));
+    renderWorkspaceList(workspaces.filter(Boolean));
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = `<p class="empty-hint">Gagal memuat: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function renderWorkspaceList(workspaces) {
+  const list = $('workspaceList');
+  if (workspaces.length === 0) {
+    list.innerHTML = '<p class="empty-hint">Belum ada workspace.</p>';
+    return;
+  }
+  list.innerHTML = workspaces.map(ws => `
+    <div class="workspace-card" onclick="openWorkspace('${ws.id}')">
+      <div class="workspace-card-header">
+        <h3>${escapeHtml(ws.name)}</h3>
+        <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? '👨‍🏫 Mentor' : '👷 Pekerja'}</span>
+      </div>
+      ${ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// 8. CREATE WORKSPACE (FAST)
+// ============================================================
+async function handleCreateWorkspace(e) {
+  e.preventDefault();
+  const name = $('newWorkspaceName').value.trim();
+  const drive = $('newWorkspaceDrive').value.trim();
+  if (!name) return alert('Nama workspace wajib diisi.');
+
+  const btn = $('createWorkspaceSubmitBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Membuat...';
 
   try {
-    const snap = await getDocs(query(collection(db, 'rooms'),
-      where('roomNameLower', '==', roomName.toLowerCase()), limit(1)));
-    if (snap.empty) {
-      alert('Ruang kerja tidak ditemukan.');
-      return;
-    }
+    const joinCode = generateJoinCode();
+    const wsRef = await addDoc(collection(db, 'workspaces'), {
+      name, ownerUid: state.user.uid, joinCode, driveLink: drive, createdAt: serverTimestamp()
+    });
 
-    const roomDoc = snap.docs[0];
-    const roomData = roomDoc.data();
+    state.workspaceId = wsRef.id;
+    state.workspaceName = name;
+    state.role = 'mentor';
+    state.workerName = state.user.displayName || 'Mentor';
+    $('createWorkspaceModal').classList.add('hidden');
+    $('createWorkspaceForm').reset();
+    showWorkspaceView();
+    subscribeToWorkspace();
 
-    const passwordHash = await hashPassword(password);
-    if (roomData.passwordHash !== passwordHash) {
-      alert('Kata sandi salah!');
-      return;
-    }
+    Promise.all([
+      setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
+        uid: state.user.uid, email: state.user.email,
+        name: state.workerName, role: 'mentor', joinedAt: serverTimestamp()
+      }),
+      updateDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) })
+    ]).catch(err => console.error('Background update gagal:', err));
 
-    const workersRef = collection(db, 'rooms', roomDoc.id, 'workers');
-    const workersSnap = await getDocs(workersRef);
-    if (workersSnap.size >= 20) {
-      alert('Ruang kerja sudah penuh (maks 20 pekerja).');
-      return;
-    }
+  } catch (err) {
+    console.error(err);
+    alert('Gagal membuat workspace: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
+}
 
-    const sudahAda = workersSnap.docs.find(d => d.data().name.toLowerCase() === workerName.toLowerCase());
-    if (!sudahAda) {
-      await addDoc(workersRef, { name: workerName, createdAt: serverTimestamp() });
-    }
+// ============================================================
+// 9. JOIN WORKSPACE
+// ============================================================
+async function handleJoinWorkspace(e) {
+  e.preventDefault();
+  const code = $('joinCodeInput').value.trim().toUpperCase();
+  if (code.length !== 6) return alert('Kode harus 6 karakter.');
 
-    const session = { roomId: roomDoc.id, roomName: roomData.roomName, role: 'worker', workerName };
-    localStorage.setItem('ws_session', JSON.stringify(session));
-    Object.assign(state, session);
+  const btn = $('joinWorkspaceSubmitBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Mencari...';
 
-    await loadWorkspace();
+  try {
+    const snap = await getDocs(query(collection(db, 'workspaces'),
+      where('joinCode', '==', code), limit(1)));
+    if (snap.empty) return alert('Kode undangan tidak valid.');
+
+    const wsDoc = snap.docs[0];
+    const wsData = wsDoc.data();
+
+    const membersSnap = await getDocs(collection(db, 'workspaces', wsDoc.id, 'members'));
+    if (membersSnap.size >= 20) return alert('Workspace sudah penuh (maks 20).');
+
+    const myName = state.user.displayName || state.user.email.split('@')[0];
+    await setDoc(doc(db, 'workspaces', wsDoc.id, 'members', state.user.uid), {
+      uid: state.user.uid, email: state.user.email,
+      name: myName, role: 'worker', joinedAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) });
+
+    state.workspaceId = wsDoc.id;
+    state.workspaceName = wsData.name;
+    state.role = 'worker';
+    state.workerName = myName;
+    $('joinWorkspaceModal').classList.add('hidden');
+    $('joinWorkspaceForm').reset();
+    showWorkspaceView();
+    subscribeToWorkspace();
   } catch (err) {
     console.error(err);
     alert('Gagal bergabung: ' + err.message);
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Masuk ke Ruang Kerja';
+    btn.disabled = false; btn.textContent = original;
   }
 }
 
 // ============================================================
-// 6. LOAD WORKSPACE
+// 10. OPEN WORKSPACE
 // ============================================================
-async function loadWorkspace() {
-  hideAuthGate();
+window.openWorkspace = async (workspaceId) => {
+  try {
+    const wsSnap = await getDoc(doc(db, 'workspaces', workspaceId));
+    if (!wsSnap.exists()) return alert('Workspace tidak ditemukan.');
+    const memberSnap = await getDoc(doc(db, 'workspaces', workspaceId, 'members', state.user.uid));
+    if (!memberSnap.exists()) return alert('Anda bukan anggota workspace ini.');
 
-  $('mentorPanel').classList.toggle('hidden', state.role !== 'mentor');
-  $('workerDailyGoalBox').classList.toggle('hidden', state.role !== 'worker');
+    state.workspaceId = workspaceId;
+    state.workspaceName = wsSnap.data().name;
+    state.role = memberSnap.data().role;
+    state.workerName = memberSnap.data().name || state.user.displayName || 'User';
+    showWorkspaceView();
+    subscribeToWorkspace();
+  } catch (err) {
+    alert('Gagal membuka workspace: ' + err.message);
+  }
+};
 
-  $('roleControls').innerHTML = `
-    <span style="font-size:0.8rem;color:var(--text-muted);">
-      ${state.role === 'mentor' ? '👨‍🏫 Mentor' : '👷 Pekerja'} ·
-      <strong>${escapeHtml(state.workerName)}</strong> ·
-      Room: <strong>${escapeHtml(state.roomName)}</strong>
-    </span>
-    <button type="button" class="btn-secondary" id="logoutBtn" style="padding:0.35rem 0.75rem;font-size:0.75rem;">Keluar</button>
-  `;
-  $('logoutBtn').addEventListener('click', logout);
-
-  subscribeToRoom();
+function backToDashboard() {
+  unsubscribers.forEach(u => u());
+  unsubscribers = [];
+  state.workspaceId = null;
+  state.workspaceName = null;
+  state.role = null;
+  state.members = [];
+  state.tasks = [];
+  showDashboardView();
 }
 
 // ============================================================
-// 7. SUBSCRIBE KE DATA ROOM
+// 11. SUBSCRIBE WORKSPACE DATA
 // ============================================================
-function subscribeToRoom() {
+function subscribeToWorkspace() {
   unsubscribers.forEach(u => u());
   unsubscribers = [];
 
-  const workersRef = collection(db, 'rooms', state.roomId, 'workers');
-  const unsubWorkers = onSnapshot(
-    query(workersRef, orderBy('createdAt', 'asc')),
+  const membersRef = collection(db, 'workspaces', state.workspaceId, 'members');
+  unsubscribers.push(onSnapshot(query(membersRef, orderBy('joinedAt', 'asc')),
     (snap) => {
-      state.workers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderWorkers();
-      updateWorkerSelect();
+      state.members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderMembers();
+      updateAssigneeSelect();
       updateWorkerCount();
       loadDailyGoal();
       setLiveStatus(true);
     },
     (err) => { console.error(err); setLiveStatus(false); }
-  );
-  unsubscribers.push(unsubWorkers);
+  ));
 
-  const tasksRef = collection(db, 'rooms', state.roomId, 'tasks');
-  const unsubTasks = onSnapshot(
-    query(tasksRef, orderBy('createdAt', 'desc')),
+  const tasksRef = collection(db, 'workspaces', state.workspaceId, 'tasks');
+  unsubscribers.push(onSnapshot(query(tasksRef, orderBy('createdAt', 'desc')),
     (snap) => {
       state.tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderKanban();
@@ -233,43 +368,45 @@ function subscribeToRoom() {
       setLiveStatus(true);
     },
     (err) => { console.error(err); setLiveStatus(false); }
-  );
-  unsubscribers.push(unsubTasks);
+  ));
 
-  const unsubRoom = onSnapshot(doc(db, 'rooms', state.roomId), (docSnap) => {
-    if (docSnap.exists()) {
-      state.driveLink = docSnap.data().mentorDriveLink || '';
-      updateDriveStatus();
+  unsubscribers.push(onSnapshot(doc(db, 'workspaces', state.workspaceId),
+    (docSnap) => {
+      if (docSnap.exists()) {
+        state.driveLink = docSnap.data().driveLink || '';
+        updateDriveStatus();
+      }
     }
-  });
-  unsubscribers.push(unsubRoom);
+  ));
 }
 
 // ============================================================
-// 8. RENDER
+// 12. RENDER
 // ============================================================
-function renderWorkers() {
+function renderMembers() {
   const list = $('workerList');
   if (!list) return;
-  list.innerHTML = state.workers.map(w => `
+  list.innerHTML = state.members.map(m => `
     <li class="worker-tag">
-      ${escapeHtml(w.name)}
-      ${state.role === 'mentor' ? `<button class="remove-worker" onclick="removeWorker('${w.id}')" title="Hapus">×</button>` : ''}
+      ${escapeHtml(m.name)} ${m.role === 'mentor' ? '👨‍🏫' : ''}
+      ${state.role === 'mentor' && m.role !== 'mentor'
+        ? `<button class="remove-worker" onclick="removeMember('${m.id}')">×</button>` : ''}
     </li>
-  `).join('') || '<li class="empty-hint">Belum ada pekerja.</li>';
+  `).join('') || '<li class="empty-hint">Belum ada anggota.</li>';
 }
 
-function updateWorkerSelect() {
+function updateAssigneeSelect() {
   const select = $('taskAssignee');
   if (!select) return;
-  select.innerHTML = state.workers.length
-    ? state.workers.map(w => `<option value="${escapeHtml(w.name)}">${escapeHtml(w.name)}</option>`).join('')
-    : '<option value="">(Tambah pekerja dulu)</option>';
+  const workers = state.members.filter(m => m.role === 'worker');
+  select.innerHTML = workers.length
+    ? workers.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('')
+    : '<option value="">(Belum ada pekerja)</option>';
 }
 
 function updateWorkerCount() {
   const el = $('workerCountDisplay');
-  if (el) el.textContent = `Pekerja: ${state.workers.length} / 20`;
+  if (el) el.textContent = `Pekerja: ${state.members.filter(m => m.role === 'worker').length} / 20`;
 }
 
 function updateDriveStatus() {
@@ -289,9 +426,7 @@ function updateDriveStatus() {
 function renderKanban() {
   ['todo', 'progress', 'review', 'done'].forEach(status => {
     let filtered = state.tasks.filter(t => t.status === status);
-    if (state.role === 'worker') {
-      filtered = filtered.filter(t => t.assignee === state.workerName);
-    }
+    if (state.role === 'worker') filtered = filtered.filter(t => t.assignee === state.workerName);
     $('count-' + status).textContent = filtered.length;
     $('list-' + status).innerHTML = filtered.map(renderTaskCard).join('') ||
       '<p class="empty-hint">Kosong</p>';
@@ -302,7 +437,6 @@ function renderTaskCard(task) {
   const isOverdue = task.endDate && new Date(task.endDate) < new Date() && task.status !== 'done';
   const isWorker = state.role === 'worker';
   const isMentor = state.role === 'mentor';
-
   const canStart = isWorker && task.status === 'todo' && task.assignee === state.workerName;
   const canReport = isWorker && task.status === 'progress' && task.assignee === state.workerName;
   const canValidate = isMentor && task.status === 'review';
@@ -342,22 +476,42 @@ function updateKpiProgress() {
   $('kpiProgressBar').style.width = pct + '%';
 }
 
+function loadDailyGoal() {
+  const me = state.members.find(m => m.id === state.user?.uid);
+  const today = new Date().toISOString().split('T')[0];
+  const display = $('dailyGoalDisplay');
+  if (!display) return;
+  if (me && me.goalDate === today && me.dailyGoal) {
+    display.textContent = `🎯 ${me.dailyGoal}`;
+  } else {
+    display.textContent = '';
+  }
+}
+
+function setDefaultDates() {
+  const today = new Date();
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const startEl = $('startDate');
+  const endEl = $('endDate');
+  if (startEl) startEl.valueAsDate = today;
+  if (endEl) endEl.valueAsDate = nextWeek;
+}
+
 // ============================================================
-// 9. ACTIONS
+// 13. ACTIONS
 // ============================================================
 window.moveTask = async (taskId, newStatus) => {
   try {
-    await updateDoc(doc(db, 'rooms', state.roomId, 'tasks', taskId), {
-      status: newStatus,
-      updatedAt: serverTimestamp()
+    await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
+      status: newStatus, updatedAt: serverTimestamp()
     });
   } catch (err) { alert('Gagal: ' + err.message); }
 };
 
-window.removeWorker = async (workerId) => {
-  if (!confirm('Hapus pekerja ini?')) return;
+window.removeMember = async (memberId) => {
+  if (!confirm('Hapus anggota ini dari workspace?')) return;
   try {
-    await deleteDoc(doc(db, 'rooms', state.roomId, 'workers', workerId));
+    await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'members', memberId));
   } catch (err) { alert('Gagal: ' + err.message); }
 };
 
@@ -367,33 +521,41 @@ window.openReportModal = (taskId) => {
 };
 
 // ============================================================
-// 10. EVENT LISTENERS
+// 14. EVENT LISTENERS
 // ============================================================
 function setupEventListeners() {
-  $('createRoomForm').addEventListener('submit', handleCreateRoom);
-  $('joinRoomForm').addEventListener('submit', handleJoinRoom);
+  $('loginForm').addEventListener('submit', handleLogin);
+  $('registerForm').addEventListener('submit', handleRegister);
+  $('authToggleLink').addEventListener('click', (e) => { e.preventDefault(); toggleAuthMode(); });
+  $('logoutBtn').addEventListener('click', handleLogout);
+
+  $('createWorkspaceBtn').addEventListener('click', () => $('createWorkspaceModal').classList.remove('hidden'));
+  $('joinWorkspaceBtn').addEventListener('click', () => $('joinWorkspaceModal').classList.remove('hidden'));
+  $('createWorkspaceForm').addEventListener('submit', handleCreateWorkspace);
+  $('joinWorkspaceForm').addEventListener('submit', handleJoinWorkspace);
+  $('backToDashboardBtn').addEventListener('click', backToDashboard);
+
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $(btn.dataset.close).classList.add('hidden');
+    });
+  });
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  });
 
   $('saveDriveBtn').addEventListener('click', async () => {
     const link = $('driveLinkInput').value.trim();
     try {
-      await updateDoc(doc(db, 'rooms', state.roomId), { mentorDriveLink: link });
+      await updateDoc(doc(db, 'workspaces', state.workspaceId), { driveLink: link });
       alert('✅ Link Google Drive disimpan!');
     } catch (err) { alert('Gagal: ' + err.message); }
   });
 
-  $('addWorkerBtn').addEventListener('click', async () => {
-    const input = $('newWorkerName');
-    const name = input.value.trim();
-    if (!name) return;
-    if (state.workers.length >= 20) return alert('Maksimal 20 pekerja!');
-    if (state.workers.some(w => w.name.toLowerCase() === name.toLowerCase()))
-      return alert('Nama sudah ada!');
-    try {
-      await addDoc(collection(db, 'rooms', state.roomId, 'workers'), {
-        name, createdAt: serverTimestamp()
-      });
-      input.value = '';
-    } catch (err) { alert('Gagal: ' + err.message); }
+  $('addWorkerBtn').addEventListener('click', () => {
+    alert('Untuk menambah pekerja: bagikan kode undangan workspace ke mereka.\n\nKode undangan bisa dilihat di Dashboard.');
   });
 
   $('createTaskForm').addEventListener('submit', async (e) => {
@@ -402,18 +564,15 @@ function setupEventListeners() {
     const assignee = $('taskAssignee').value;
     if (!title || !assignee) return alert('Judul & assignee wajib diisi!');
     try {
-      await addDoc(collection(db, 'rooms', state.roomId, 'tasks'), {
-        title,
-        assignee,
+      await addDoc(collection(db, 'workspaces', state.workspaceId, 'tasks'), {
+        title, assignee,
         kpi: parseInt($('taskKpi').value, 10) || 10,
         startDate: $('startDate').value,
         endDate: $('endDate').value,
         desc: $('taskDesc').value.trim(),
         status: 'todo',
-        reportNotes: '',
-        reportFileName: '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        reportNotes: '', reportFileName: '',
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp()
       });
       e.target.reset();
       $('taskKpi').value = 10;
@@ -427,7 +586,7 @@ function setupEventListeners() {
     const notes = $('reportNotes').value.trim();
     const file = $('reportFile').files[0];
     try {
-      await updateDoc(doc(db, 'rooms', state.roomId, 'tasks', taskId), {
+      await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
         status: 'review',
         reportNotes: notes,
         reportFileName: file ? file.name : '',
@@ -446,10 +605,8 @@ function setupEventListeners() {
   $('saveDailyGoalBtn').addEventListener('click', async () => {
     const goal = $('dailyGoalInput').value.trim();
     if (!goal) return;
-    const worker = state.workers.find(w => w.name === state.workerName);
-    if (!worker) return alert('Data pekerja tidak ditemukan.');
     try {
-      await updateDoc(doc(db, 'rooms', state.roomId, 'workers', worker.id), {
+      await updateDoc(doc(db, 'workspaces', state.workspaceId, 'members', state.user.uid), {
         dailyGoal: goal,
         goalDate: new Date().toISOString().split('T')[0]
       });
@@ -458,57 +615,22 @@ function setupEventListeners() {
   });
 }
 
-function loadDailyGoal() {
-  const worker = state.workers.find(w => w.name === state.workerName);
-  const today = new Date().toISOString().split('T')[0];
-  const display = $('dailyGoalDisplay');
-  if (!display) return;
-  if (worker && worker.goalDate === today && worker.dailyGoal) {
-    display.textContent = `🎯 ${worker.dailyGoal}`;
-  } else {
-    display.textContent = '';
-  }
-}
-
-function setDefaultDates() {
-  const today = new Date();
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const startEl = $('startDate');
-  const endEl = $('endDate');
-  if (startEl) startEl.valueAsDate = today;
-  if (endEl) endEl.valueAsDate = nextWeek;
-}
-
 // ============================================================
-// 11. LOGOUT
-// ============================================================
-function logout() {
-  if (!confirm('Keluar dari ruang kerja?')) return;
-  unsubscribers.forEach(u => u());
-  unsubscribers = [];
-  localStorage.removeItem('ws_session');
-  location.reload();
-}
-
-// ============================================================
-// 12. INIT
+// 15. INIT + AUTH STATE
 // ============================================================
 function init() {
   setDefaultDates();
   setupEventListeners();
 
-  const saved = localStorage.getItem('ws_session');
-  if (saved) {
-    try {
-      const session = JSON.parse(saved);
-      Object.assign(state, session);
-      loadWorkspace();
-    } catch {
-      showAuthGate();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      state.user = user;
+      showDashboardView();
+    } else {
+      state.user = null;
+      showAuthView();
     }
-  } else {
-    showAuthGate();
-  }
+  });
 }
 
 init();
