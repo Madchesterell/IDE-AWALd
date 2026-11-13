@@ -104,8 +104,8 @@ function showWorkspaceView() {
 // ============================================================
 function toggleAuthMode() {
   const isLogin = !$('loginForm').classList.contains('hidden');
-  $('loginForm').classList.toggle('hidden', isLogin);      // ✅ dibalik
-  $('registerForm').classList.toggle('hidden', !isLogin);  // ✅ dibalik
+  $('loginForm').classList.toggle('hidden', isLogin);      
+  $('registerForm').classList.toggle('hidden', !isLogin);  
   $('authTitle').textContent = isLogin ? 'Buat Akun Baru' : 'Selamat Datang';
   $('authSubtitle').textContent = isLogin
     ? 'Daftar untuk mulai mengelola workspace Anda.'
@@ -246,12 +246,12 @@ async function handleCreateWorkspace(e) {
     subscribeToWorkspace();
 
     Promise.all([
-  setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
-    uid: state.user.uid, email: state.user.email,
-    name: state.workerName, role: 'mentor', joinedAt: serverTimestamp()
-  }),
-  setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true })
-]).catch(err => console.error('Background update gagal:', err));
+      setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
+        uid: state.user.uid, email: state.user.email,
+        name: state.workerName, role: 'mentor', joinedAt: serverTimestamp()
+      }),
+      setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true })
+    ]).catch(err => console.error('Background update gagal:', err));
     
   } catch (err) {
     console.error(err);
@@ -289,7 +289,7 @@ async function handleJoinWorkspace(e) {
       uid: state.user.uid, email: state.user.email,
       name: myName, role: 'worker', joinedAt: serverTimestamp()
     });
-   setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true })
+    setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
 
     state.workspaceId = wsDoc.id;
     state.workspaceName = wsData.name;
@@ -453,7 +453,11 @@ function renderTaskCard(task) {
         <span>👤 ${escapeHtml(task.assignee)}</span>
         <span>📅 ${task.startDate || '-'} → ${task.endDate || '-'}</span>
       </div>
-      ${task.reportNotes ? `<div class="task-report"><strong>📎 Laporan:</strong> ${escapeHtml(task.reportNotes)}${task.reportFileName ? ` <em>(${escapeHtml(task.reportFileName)})</em>` : ''}</div>` : ''}
+      ${task.reportNotes ? `
+        <div class="task-report">
+          <strong>📎 Laporan:</strong> ${escapeHtml(task.reportNotes)}
+          ${task.reportFileLink ? `<br><a href="${escapeHtml(task.reportFileLink)}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">🔗 Buka Tautan Google Drive</a>` : ''}
+        </div>` : ''}
       <div class="task-actions">
         ${canStart ? `<button class="btn-sm" onclick="moveTask('${task.id}','progress')">▶ Mulai</button>` : ''}
         ${canReport ? `<button class="btn-sm" onclick="openReportModal('${task.id}')">📤 Kirim Laporan</button>` : ''}
@@ -571,7 +575,7 @@ function setupEventListeners() {
         endDate: $('endDate').value,
         desc: $('taskDesc').value.trim(),
         status: 'todo',
-        reportNotes: '', reportFileName: '',
+        reportNotes: '', reportFileLink: '',
         createdAt: serverTimestamp(), updatedAt: serverTimestamp()
       });
       e.target.reset();
@@ -584,18 +588,23 @@ function setupEventListeners() {
     e.preventDefault();
     const taskId = $('reportTaskId').value;
     const notes = $('reportNotes').value.trim();
-    const file = $('reportFile').files[0];
+    const reportLink = $('reportDriveLink').value.trim();
+
+    if (!reportLink) return alert('Tautan Google Drive wajib diisi!');
+
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
         status: 'review',
         reportNotes: notes,
-        reportFileName: file ? file.name : '',
+        reportFileLink: reportLink,
         updatedAt: serverTimestamp()
       });
       $('reportModal').classList.add('hidden');
       e.target.reset();
-      alert('✅ Laporan terkirim ke Mentor!');
-    } catch (err) { alert('Gagal: ' + err.message); }
+      alert('✅ Tautan laporan terkirim ke Mentor!');
+    } catch (err) { 
+      alert('Gagal: ' + err.message); 
+    }
   });
 
   $('closeModalBtn').addEventListener('click', () => {
