@@ -4,21 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Workspace - Task & KPI Tracker</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        .hidden { display: none !important; }
+        
+        /* Navbar */
+        .navbar { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .brand h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+        .brand h1 span { color: var(--primary-color); }
+        .role-controls { display: flex; align-items: center; gap: 10px; }
+        .badge-capacity, .badge-live { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: #e0f2fe; color: #0369a1; }
+        
+        /* Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; width: 100%; flex: 1; }
+        
+        /* Auth Gate */
+        .auth-gate-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .auth-card { background: var(--card-bg); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .auth-brand h1 { font-size: 1.5rem; margin-bottom: 0.5rem; text-align: center; }
+        .auth-card h2 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+        .subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+        
+        /* Form & Buttons */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-main); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem; outline: none; transition: border 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary-color); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        .btn-primary { background: var(--primary-color); color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid var(--border-color); padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; background: var(--primary-color); color: #fff; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-warning { background: #d97706; color: #fff; }
+        
+        .auth-toggle { margin-top: 1rem; text-align: center; font-size: 0.85rem; }
+        .auth-toggle a { color: var(--primary-color); text-decoration: none; font-weight: 600; }
+        
+        /* Dashboard & Cards */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .dashboard-actions { display: flex; gap: 10px; }
+        .workspace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .workspace-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .workspace-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .workspace-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .role-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+        .role-badge.mentor { background: #fef3c7; color: #92400e; }
+        .role-badge.worker { background: #e0f2fe; color: #0369a1; }
+        .join-code { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+        
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media(max-width: 768px) { .grid-2-col { grid-template-columns: 1fr; } }
+        
+        .input-with-btn { display: flex; gap: 8px; }
+        .input-with-btn input { flex: 1; }
+        .divider { border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0; }
+        
+        /* KPI Summary */
+        .kpi-summary-bar { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+        .kpi-info h3 { font-size: 1rem; margin-bottom: 2px; }
+        .kpi-info p { font-size: 0.85rem; color: var(--text-muted); }
+        .progress-wrapper { flex: 1; min-width: 200px; }
+        .progress-bar-bg { background: #e5e7eb; height: 10px; border-radius: 5px; overflow: hidden; }
+        .progress-bar-fill { background: #16a34a; height: 100%; transition: width 0.3s; }
+        .daily-goal-box { display: flex; gap: 8px; align-items: center; }
+        .goal-badge { font-size: 0.85rem; background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 6px; font-weight: 500; }
+        
+        /* Modals */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
+        .modal-content { background: var(--card-bg); padding: 1.5rem; border-radius: 10px; width: 100%; max-width: 450px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+        
+        .worker-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .worker-tag { background: #f3f4f6; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-color); }
+        .empty-hint { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
+    </style>
 </head>
 <body>
 
-<!-- ============ 1. AUTH VIEW (Login/Daftar) ============ -->
+<!-- ============ AUTH VIEW ============ -->
 <div id="authView" class="auth-gate-modal">
     <div class="auth-card">
-        <div class="auth-brand">
-            <h1>WorkSpace<span>Pro</span></h1>
-        </div>
+        <div class="auth-brand"><h1>WorkSpace<span>Pro</span></h1></div>
         <h2 id="authTitle">Selamat Datang</h2>
         <p class="subtitle" id="authSubtitle">Masuk untuk mengakses platform evaluasi kinerja karyawan.</p>
 
-        <!-- LOGIN FORM -->
         <form id="loginForm" class="auth-form">
             <div class="form-group">
                 <label>Alamat Email</label>
@@ -31,7 +115,6 @@
             <button type="submit" class="btn-primary" id="loginBtn">Masuk ke Dashboard</button>
         </form>
 
-        <!-- REGISTER FORM (hidden default) -->
         <form id="registerForm" class="auth-form hidden">
             <div class="form-group">
                 <label>Nama Lengkap</label>
@@ -55,18 +138,15 @@
     </div>
 </div>
 
-<!-- ============ 2. DASHBOARD VIEW ============ -->
+<!-- ============ DASHBOARD VIEW ============ -->
 <div id="dashboardView" class="hidden">
     <header class="navbar">
-        <div class="brand">
-            <h1>WorkSpace<span>Pro</span></h1>
-        </div>
+        <div class="brand"><h1>WorkSpace<span>Pro</span></h1></div>
         <div class="role-controls">
             <span id="userEmailDisplay" style="font-size:0.8rem;color:var(--text-muted);"></span>
             <button type="button" id="logoutBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">Keluar</button>
         </div>
     </header>
-
     <main class="container">
         <div class="dashboard-header">
             <div>
@@ -78,19 +158,16 @@
                 <button type="button" id="joinWorkspaceBtn" class="btn-secondary">Gabung Workspace</button>
             </div>
         </div>
-
-        <div id="workspaceList" class="workspace-grid">
-            <p class="empty-hint">Memuat workspace...</p>
-        </div>
+        <div id="workspaceList" class="workspace-grid"><p class="empty-hint">Memuat workspace...</p></div>
     </main>
 </div>
 
-<!-- ============ 3. WORKSPACE VIEW (Kanban) ============ -->
+<!-- ============ WORKSPACE VIEW ============ -->
 <div id="workspaceView" class="hidden">
     <header class="navbar">
-        <div class="brand">
+        <div class="brand" style="display: flex; align-items: center; gap: 10px;">
             <button type="button" id="backToDashboardBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">← Kembali</button>
-            <h1 id="workspaceTitle">Workspace</h1>
+            <h1 id="workspaceTitle" style="font-size: 1.1rem;">Workspace</h1>
             <span class="badge-capacity" id="workerCountDisplay">Pekerja: 0 / 20</span>
             <span class="badge-live" id="liveStatus">🔴 Connecting...</span>
         </div>
@@ -98,107 +175,161 @@
     </header>
 
     <main class="container">
-        <!-- PANEL MENTOR -->
-        <section id="mentorPanel" class="panel-section">
-            <div class="grid-2-col">
-                <div class="card">
-                    <h2>Konfigurasi Muara Google Drive</h2>
-                    <p class="subtitle">Tautkan folder Google Drive Anda sebagai tujuan otomatis laporan pekerja.</p>
-                    <div class="form-group">
-                        <label for="driveLinkInput">Tautan Folder Google Drive Mentor</label>
-                        <div class="input-with-btn">
-                            <input type="url" id="driveLinkInput" placeholder="https://drive.google.com/drive/folders/...">
-                            <button type="button" id="saveDriveBtn" class="btn-secondary">Simpan</button>
-                        </div>
-                        <small id="driveStatusText" class="status-text">Belum ada folder tertaut.</small>
-                    </div>
-                    <hr class="divider">
-                    <h3>Manajemen Anggota Tim (Maks. 20)</h3>
-                    <div class="input-with-btn">
-                        <input type="text" id="newWorkerName" placeholder="Nama pekerja baru...">
-                        <button type="button" id="addWorkerBtn" class="btn-secondary">+ Tambah</button>
-                    </div>
-                    <ul id="workerList" class="worker-tags"></ul>
-                </div>
+        <!-- Tab Navigasi Mentor -->
+        <div id="mentorNavTabs" class="hidden" style="margin-bottom: 1.5rem; display: flex; gap: 10px;">
+            <button type="button" id="tabTaskView" class="btn-primary" style="width: auto;">📋 Papan Tugas & Kinerja</button>
+            <button type="button" id="tabDivisionView" class="btn-secondary" style="width: auto;">🏢 Manajemen Divisi & Anggota</button>
+        </div>
 
+        <!-- Papan Tugas -->
+        <div id="mainTaskContainer">
+            <section id="mentorPanel" class="panel-section">
+                <div class="grid-2-col">
+                    <div class="card">
+                        <h2>Konfigurasi Muara Google Drive</h2>
+                        <p class="subtitle">Tautkan folder Google Drive Anda sebagai tujuan otomatis laporan pekerja.</p>
+                        <div class="form-group">
+                            <label for="driveLinkInput">Tautan Folder Google Drive Mentor</label>
+                            <div class="input-with-btn">
+                                <input type="url" id="driveLinkInput" placeholder="https://drive.google.com/drive/folders/...">
+                                <button type="button" id="saveDriveBtn" class="btn-secondary">Simpan</button>
+                            </div>
+                            <small id="driveStatusText" class="status-text">Belum ada folder tertaut.</small>
+                        </div>
+                        <hr class="divider">
+                        <h3>Daftar Anggota Tim & Divisi</h3>
+                        <ul id="workerList" class="worker-tags" style="margin-top: 10px;"></ul>
+                    </div>
+
+                    <div class="card">
+                        <h2>Buat & Bagikan Tugas Baru</h2>
+                        <form id="createTaskForm">
+                            <div class="form-group">
+                                <label for="taskTitle">Judul Tugas</label>
+                                <input type="text" id="taskTitle" required placeholder="Contoh: Pembuatan Model 3D Karakter Utama">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="taskAssignee">Tugaskan Kepada</label>
+                                    <select id="taskAssignee" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="taskKpi">Target KPI (Poin/Bobot)</label>
+                                    <input type="number" id="taskKpi" min="1" max="100" value="10" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDriveSource">Sumber Tautan Drive Tugas</label>
+                                <select id="taskDriveSource" class="form-control" required>
+                                    <option value="workspace">Gunakan Link Drive Utama Workspace (dari Mentor)</option>
+                                    <option value="worker">Pekerja Input Link Drive Sendiri</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="startDate">Tanggal Mulai</label>
+                                    <input type="date" id="startDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="endDate">Tenggat Waktu (Deadline)</label>
+                                    <input type="date" id="endDate" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDesc">Instruksi & Kriteria KPI</label>
+                                <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Bagikan Tugas ke Ruang Kerja</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- KPI Summary -->
+            <section class="kpi-summary-bar card">
+                <div class="kpi-info">
+                    <h3>Ringkasan Pencapaian KPI Ruang Kerja</h3>
+                    <p id="kpiProgressText">0 dari 0 Poin KPI Tercapai (0%)</p>
+                </div>
+                <div class="progress-wrapper">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="kpiProgressBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <div id="workerDailyGoalBox" class="daily-goal-box hidden">
+                    <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
+                    <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
+                    <span id="dailyGoalDisplay" class="goal-badge"></span>
+                </div>
+            </section>
+
+            <!-- Tabel Daftar Tugas Horizontal -->
+            <section class="card" style="padding: 0; overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;" id="taskTable">
+                        <thead>
+                            <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">
+                                <th style="padding: 14px 16px;">Judul Tugas</th>
+                                <th style="padding: 14px 16px;">Karyawan</th>
+                                <th style="padding: 14px 16px;">Tingkat Kesulitan (KPI)</th>
+                                <th style="padding: 14px 16px;">Status</th>
+                                <th style="padding: 14px 16px;">Tenggat Waktu</th>
+                                <th style="padding: 14px 16px; text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Manajemen Divisi & Anggota -->
+        <div id="divisionManagementPanel" class="hidden">
+            <div class="grid-2-col" style="align-items: start;">
                 <div class="card">
-                    <h2>Buat & Bagikan Tugas Baru</h2>
-                    <form id="createTaskForm">
+                    <h2>Manajemen Divisi Tim</h2>
+                    <p class="subtitle">Kelompokkan divisi kerja dan atur penugasan karyawan.</p>
+                    <div id="divisionListContainer" style="margin-top: 15px;"></div>
+                </div>
+                <div class="card">
+                    <h2>Tambah Divisi Baru</h2>
+                    <form id="createDivisionForm" style="margin-top: 15px;">
                         <div class="form-group">
-                            <label for="taskTitle">Judul Tugas</label>
-                            <input type="text" id="taskTitle" required placeholder="Contoh: Pembuatan Model 3D Karakter Utama">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="taskAssignee">Tugaskan Kepada</label>
-                                <select id="taskAssignee" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label for="taskKpi">Target KPI (Poin/Bobot)</label>
-                                <input type="number" id="taskKpi" min="1" max="100" value="10" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="startDate">Tanggal Mulai</label>
-                                <input type="date" id="startDate" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="endDate">Tenggat Waktu (Deadline)</label>
-                                <input type="date" id="endDate" required>
-                            </div>
+                            <label>Nama Divisi *</label>
+                            <input type="text" id="newDivisionName" required placeholder="Contoh: IT, Animasi 3D, Marketing...">
                         </div>
                         <div class="form-group">
-                            <label for="taskDesc">Instruksi & Kriteria KPI</label>
-                            <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output..."></textarea>
+                            <label>Deskripsi Fokus Kerja</label>
+                            <textarea id="newDivisionDesc" rows="3" placeholder="Jelaskan fokus kerja divisi ini..."></textarea>
                         </div>
-                        <button type="submit" class="btn-primary">Bagikan Tugas ke Ruang Kerja</button>
+                        <button type="submit" class="btn-primary">+ Buat Divisi</button>
                     </form>
                 </div>
             </div>
-        </section>
 
-        <!-- KPI SUMMARY -->
-        <section class="kpi-summary-bar card">
-            <div class="kpi-info">
-                <h3>Ringkasan Pencapaian KPI Ruang Kerja</h3>
-                <p id="kpiProgressText">0 dari 0 Poin KPI Tercapai (0%)</p>
-            </div>
-            <div class="progress-wrapper">
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" id="kpiProgressBar" style="width: 0%;"></div>
+            <div class="card" style="margin-top: 20px;">
+                <h2>Pengaturan Anggota & Penugasan Divisi</h2>
+                <p class="subtitle">Atur peran dan masukkan anggota ke divisi yang sesuai.</p>
+                <div style="overflow-x: auto; margin-top: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;" id="memberSettingsTable">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; font-size: 0.85rem; color: #6b7280;">
+                                <th style="padding: 10px;">PENGGUNA</th>
+                                <th style="padding: 10px;">EMAIL</th>
+                                <th style="padding: 10px;">PERAN</th>
+                                <th style="padding: 10px;">DIVISI</th>
+                                <th style="padding: 10px;">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberSettingsTableBody"></tbody>
+                    </table>
                 </div>
             </div>
-            <div id="workerDailyGoalBox" class="daily-goal-box hidden">
-                <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
-                <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
-                <span id="dailyGoalDisplay" class="goal-badge"></span>
-            </div>
-        </section>
-
-        <!-- KANBAN -->
-        <section class="kanban-board">
-            <div class="kanban-column" data-status="todo">
-                <div class="column-header"><h3>To Do</h3><span class="count-badge" id="count-todo">0</span></div>
-                <div class="task-list" id="list-todo"></div>
-            </div>
-            <div class="kanban-column" data-status="progress">
-                <div class="column-header"><h3>In Progress</h3><span class="count-badge" id="count-progress">0</span></div>
-                <div class="task-list" id="list-progress"></div>
-            </div>
-            <div class="kanban-column" data-status="review">
-                <div class="column-header"><h3>Review</h3><span class="count-badge" id="count-review">0</span></div>
-                <div class="task-list" id="list-review"></div>
-            </div>
-            <div class="kanban-column" data-status="done">
-                <div class="column-header"><h3>Done</h3><span class="count-badge" id="count-done">0</span></div>
-                <div class="task-list" id="list-done"></div>
-            </div>
-        </section>
+        </div>
     </main>
 </div>
 
-<!-- ============ MODAL: BUAT WORKSPACE ============ -->
+<!-- Modal Buat Workspace -->
 <div id="createWorkspaceModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" data-close="createWorkspaceModal">&times;</span>
@@ -218,7 +349,7 @@
     </div>
 </div>
 
-<!-- ============ MODAL: GABUNG WORKSPACE ============ -->
+<!-- Modal Gabung Workspace -->
 <div id="joinWorkspaceModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" data-close="joinWorkspaceModal">&times;</span>
@@ -234,24 +365,70 @@
     </div>
 </div>
 
-<!-- ============ MODAL: LAPORAN (DIUBAH KE LINK DRIVE) ============ -->
+<!-- Modal Laporan -->
 <div id="reportModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" id="closeModalBtn">&times;</span>
         <h2>Kirim Laporan & Bukti Kerja</h2>
-        <p class="subtitle">Masukkan tautan Google Drive hasil pengerjaan tugas Anda.</p>
+        <p class="subtitle" id="reportModalSubtitle">Unggah tugas Anda sesuai arahan mentor.</p>
         <form id="submitReportForm">
             <input type="hidden" id="reportTaskId">
             <div class="form-group">
                 <label for="reportNotes">Catatan Progres Pekerjaan</label>
                 <textarea id="reportNotes" rows="3" required placeholder="Jelaskan bagian yang sudah dikerjakan..."></textarea>
             </div>
-            <div class="form-group">
-                <label for="reportDriveLink">Tautan File Google Drive</label>
-                <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required />
-                <small style="color: var(--text-muted); font-size: 0.75rem;">Tempelkan tautan file atau folder tugas yang sudah diunggah ke Drive.</small>
-            </div>
+            <div id="reportDriveContainer" class="form-group"></div>
             <button type="submit" class="btn-primary">Kirim Laporan ke Mentor</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Validasi / Revisi Mentor -->
+<div id="reviewModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal" id="closeReviewModalBtn">&times;</span>
+        <h2>Evaluasi & Validasi Tugas</h2>
+        <p class="subtitle">Berikan keputusan validasi atau catatan revisi untuk pekerja.</p>
+        <form id="submitReviewForm">
+            <input type="hidden" id="reviewTaskId">
+            <div class="form-group">
+                <label for="mentorReviewNotes">Catatan Revisi / Masukan untuk Pekerja</label>
+                <textarea id="mentorReviewNotes" rows="3" placeholder="Tuliskan bagian mana saja yang perlu direvisi atau diperbaiki..."></textarea>
+                <small style="color: var(--text-muted);">Kosongkan jika tugas sudah sempurna dan langsung divalidasi (selesai).</small>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" id="btnValidateDone" class="btn-primary" style="background: #16a34a; flex: 1;">✅ Validasi Selesai (Done)</button>
+                <button type="button" id="btnSendRevision" class="btn-primary" style="background: #d97706; flex: 1;">↩ Minta Revisi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Edit Anggota Divisi -->
+<div id="editMemberModal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-modal" data-close="editMemberModal">&times;</span>
+        <h2>Atur Divisi & Peran Anggota</h2>
+        <form id="editMemberForm" style="margin-top: 15px;">
+            <input type="hidden" id="editMemberId">
+            <div class="form-group">
+                <label>Nama Anggota</label>
+                <input type="text" id="editMemberNameDisplay" disabled style="background: #f3f4f6;">
+            </div>
+            <div class="form-group">
+                <label>Peran (Role)</label>
+                <select id="editMemberRole" class="form-control" required>
+                    <option value="worker">Pekerja (Worker / Employee)</option>
+                    <option value="mentor">Mentor (Manager / Admin)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Divisi Penugasan</label>
+                <select id="editMemberDivision" class="form-control" required>
+                    <option value="Umum">(Umum)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">Simpan Perubahan</button>
         </form>
     </div>
 </div>
