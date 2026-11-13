@@ -622,14 +622,10 @@ function init() {
   setDefaultDates();
   setupEventListeners();
 
- function init() {
-  setDefaultDates();
-  setupEventListeners();
-
   onAuthStateChanged(auth, (user) => {
     if (user) {
       state.user = user;
-      showDashboardView();   // ← LANGSUNG tampil, tidak tunggu apapun
+      showDashboardView();   
       ensureUserDoc(user).catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err));
     } else {
       state.user = null;
