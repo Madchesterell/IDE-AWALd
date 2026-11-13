@@ -246,13 +246,13 @@ async function handleCreateWorkspace(e) {
     subscribeToWorkspace();
 
     Promise.all([
-      setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
-        uid: state.user.uid, email: state.user.email,
-        name: state.workerName, role: 'mentor', joinedAt: serverTimestamp()
-      }),
-     await setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
-    ]).catch(err => console.error('Background update gagal:', err));
-
+  setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
+    uid: state.user.uid, email: state.user.email,
+    name: state.workerName, role: 'mentor', joinedAt: serverTimestamp()
+  }),
+  setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true })
+]).catch(err => console.error('Background update gagal:', err));
+    
   } catch (err) {
     console.error(err);
     alert('Gagal membuat workspace: ' + err.message);
@@ -289,7 +289,7 @@ async function handleJoinWorkspace(e) {
       uid: state.user.uid, email: state.user.email,
       name: myName, role: 'worker', joinedAt: serverTimestamp()
     });
-    setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true })
+   setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true })
 
     state.workspaceId = wsDoc.id;
     state.workspaceName = wsData.name;
@@ -622,33 +622,38 @@ function init() {
   setDefaultDates();
   setupEventListeners();
 
-  onAuthStateChanged(auth, async (user) => {
+ function init() {
+  setDefaultDates();
+  setupEventListeners();
+
+  onAuthStateChanged(auth, (user) => {
     if (user) {
       state.user = user;
-
-      // Pastikan dokumen users/{uid} ada (untuk akun lama)
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            email: user.email,
-            displayName: user.displayName || user.email.split('@')[0],
-            workspaceIds: [],
-            createdAt: serverTimestamp()
-          });
-          console.log('[DEBUG] Dokumen user dibuat untuk:', user.email);
-        }
-      } catch (err) {
-        console.error('[DEBUG] Gagal cek/buat dokumen user:', err);
-      }
-
-      showDashboardView();
+      showDashboardView();   // ← LANGSUNG tampil, tidak tunggu apapun
+      ensureUserDoc(user).catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err));
     } else {
       state.user = null;
       showAuthView();
     }
   });
+}
+
+async function ensureUserDoc(user) {
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: user.email,
+        displayName: user.displayName || user.email.split('@')[0],
+        workspaceIds: [],
+        createdAt: serverTimestamp()
+      });
+      console.log('[DEBUG] Dokumen user dibuat untuk:', user.email);
+    }
+  } catch (err) {
+    console.error('[DEBUG] Gagal cek/buat dokumen user:', err);
+  }
 }
 
 init();
