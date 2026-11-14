@@ -791,12 +791,20 @@ function setupEventListeners() {
 
 function init() {
   setDefaultDates();
-  setupEventListeners();
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
       state.user = user;
-      showDashboardView();   
+      const initialsEl = $('userAvatarInitials');
+      if (initialsEl) {
+        const nameSource = user.displayName || user.email || 'FA';
+        initialsEl.textContent = nameSource.substring(0, 2).toUpperCase();
+      }
+      showDashboardView();
+      
+      // Pindahkan setupEventListeners ke sini agar elemen di dashboard sudah aktif/muncul
+      setupEventListeners();
+
       ensureUserDoc(user).catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err));
     } else {
       state.user = null;
