@@ -77,10 +77,14 @@ function showWorkspaceView() {
   $('workspaceTitle').textContent = state.workspaceName || 'Ruang Kerja';
   
   const isMentor = state.role === 'mentor';
-  
-  // Hanya tombol Manajemen Divisi yang disembunyikan dari pekerja
   const divTab = $('tabDivisionView');
   if (divTab) divTab.classList.toggle('hidden', !isMentor);
+  
+  const taskLabel = $('tabTaskLabel');
+  if (taskLabel) taskLabel.textContent = isMentor ? 'Papan Tugas' : 'Tugas Saya';
+
+  $('mentorPanel').classList.toggle('hidden', !isMentor);
+  $('workerDailyGoalBox').classList.toggle('hidden', isMentor);
   
   // Ubah teks tombol pertama menjadi "Tugas Saya" untuk pekerja
   const taskLabel = $('tabTaskLabel');
