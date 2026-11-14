@@ -1,11 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, getDoc, updateDoc, deleteDoc,
-  onSnapshot, query, where, orderBy, getDocs, limit, serverTimestamp, arrayUnion, writeBatch
+  onSnapshot, query, where, orderBy, getDocs, limit, serverTimestamp, arrayUnion, arrayRemove, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, signInWithPopup,
+  signOut, onAuthStateChanged, updateProfile, updatePassword, GoogleAuthProvider, signInWithPopup,
   sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -48,6 +48,58 @@ function safeUrl(u) {
     const url = new URL(String(u || '').trim());
     return (url.protocol === 'https:' || url.protocol === 'http:') ? url.href : '';
   } catch { return ''; }
+}
+
+function dueDiff(t) {
+  if (!t.endDate) return null;
+  return (new Date(t.endDate + 'T23:59:59') - new Date()) / 864e5;
+}
+function dueSoon(t) { const d = dueDiff(t); return t.status !== 'done' && d !== null && d >= 0 && d <= 2; }
+const needsAction = (t, role, name) => role === 'mentor'
+  ? t.status === 'review'
+  : t.assignee === name && (t.status === 'todo' || (t.status === 'progress' && t.revisionNotes));
+
+function applyTaskFilters(list) {
+  const q = ($('taskSearch')?.value || '').trim().toLowerCase();
+  const st = $('filterStatus')?.value, df = $('filterDifficulty')?.value, du = $('filterDue')?.value, as = $('filterAssignee')?.value;
+  return list.filter(t => {
+    if (q && !((t.title || '') + ' ' + (t.desc || '')).toLowerCase().includes(q)) return false;
+    if (st && t.status !== st) return false;
+    if (df && (t.difficulty || 'sedang').toLowerCase() !== df) return false;
+    if (as && t.assignee !== as) return false;
+    const d = dueDiff(t), open = t.status !== 'done' && d !== null;
+    if (du === 'overdue' && !(open && d < 0)) return false;
+    if (du === 'soon' && !dueSoon(t)) return false;
+    if (du === 'week' && !(open && d >= 0 && d <= 7)) return false;
+    return true;
+  });
+}
+
+function updateTaskBadge() {
+  const el = $('taskBadge'); if (!el) return;
+  const n = state.tasks.filter(t => needsAction(t, state.role, state.workerName)).length;
+  el.textContent = n; el.classList.toggle('hidden', n === 0);
+  el.title = state.role === 'mentor' ? 'Menunggu dinilai' : 'Perlu dikerjakan / direvisi';
+}
+
+function summarizeTasks(tasks, role, myName) {
+  const mine = role === 'worker' ? tasks.filter(t => t.assignee === myName) : tasks;
+  const c = { todo: 0, progress: 0, review: 0, done: 0, overdue: 0 };
+  mine.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; const d = dueDiff(t); if (t.status !== 'done' && d !== null && d < 0) c.overdue++; });
+  const byMember = {};
+  if (role === 'mentor') tasks.forEach(t => { const m = byMember[t.assignee] = byMember[t.assignee] || { done: 0, total: 0 }; m.total++; if (t.status === 'done') m.done++; });
+  return { c, total: mine.length, byMember, action: tasks.filter(t => needsAction(t, role, myName)).length };
+}
+
+function wsStatsHtml(ws) {
+  if (!ws.stats) return '';
+  const { c, byMember, action } = ws.stats;
+  const members = Object.entries(byMember).slice(0, 5).map(([n, m]) =>
+    `<div class="mini-progress"><span>${escapeHtml(n)}</span><div class="bar"><i style="width:${m.total ? Math.round(m.done / m.total * 100) : 0}%"></i></div><small>${m.done}/${m.total}</small></div>`).join('');
+  return `<div class="ws-stats">
+    ${action ? `<span class="action-badge">${action} perlu tindakan</span>` : ''}
+    <span class="stat">${c.todo} Belum</span><span class="stat s-progress">${c.progress} Berjalan</span><span class="stat s-review">${c.review} Dinilai</span><span class="stat s-done">${c.done} Selesai</span>${c.overdue ? `<span class="stat s-late">${c.overdue} Terlambat</span>` : ''}
+  </div>${members ? `<div class="ws-members-progress">${members}</div>` : ''}`;
 }
 
 function localDate(d = new Date()) {
@@ -212,10 +264,14 @@ async function loadUserWorkspaces() {
       const wsSnap = await getDoc(doc(db, 'workspaces', id));
       if (!wsSnap.exists()) return null;
       const memberSnap = await getDoc(doc(db, 'workspaces', id, 'members', state.user.uid));
-      return {
-        id, ...wsSnap.data(),
-        role: memberSnap.exists() ? memberSnap.data().role : 'worker'
-      };
+      if (!memberSnap.exists()) return null;   // sudah dikeluarkan
+      const role = memberSnap.data().role || 'worker';
+      let stats = null;
+      try {
+        const ts = await getDocs(collection(db, 'workspaces', id, 'tasks'));
+        stats = summarizeTasks(ts.docs.map(d => d.data()), role, memberSnap.data().name);
+      } catch (e) { console.warn('Ringkasan gagal:', e); }
+      return { id, ...wsSnap.data(), role, stats };
     }));
     renderWorkspaceList(workspaces.filter(Boolean));
   } catch (err) {
@@ -237,6 +293,7 @@ function renderWorkspaceList(workspaces) {
         <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span>
       </div>
       ${ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
+      ${wsStatsHtml(ws)}
     </div>
   `).join('');
 }
@@ -428,6 +485,8 @@ function subscribeToWorkspace() {
     (docSnap) => {
       if (docSnap.exists()) {
         state.driveLink = docSnap.data().driveLink || '';
+        state.joinCode = docSnap.data().joinCode || '';
+        if ($('wsCodeDisplay')) $('wsCodeDisplay').textContent = state.joinCode || '-';
         updateDriveStatus();
       }
     },
@@ -449,6 +508,12 @@ function updateAssigneeSelect() {
   const select = $('taskAssignee');
   if (!select) return;
   const workers = state.members.filter(m => m.role === 'worker');
+  const fa = $('filterAssignee');
+  if (fa) {
+    const pv = fa.value;
+    fa.innerHTML = '<option value="">Semua anggota</option>' + workers.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+    fa.value = pv; fa.classList.toggle('hidden', state.role !== 'mentor');
+  }
   const prev = select.value;
   select.innerHTML = workers.length
     ? workers.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('')
@@ -504,12 +569,15 @@ function renderTasks() {
     filteredTasks = state.tasks.filter(t => t.assignee === state.workerName);
   }
 
+  updateTaskBadge();
+  filteredTasks = applyTaskFilters(filteredTasks);
   if (filteredTasks.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">Belum ada tugas dalam daftar.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filteredTasks.map(task => {
+    const isSoon = dueSoon(task);
     const isOverdue = task.endDate && new Date(task.endDate + 'T23:59:59') < new Date() && task.status !== 'done';
     const isWorker = state.role === 'worker';
     const isMentor = state.role === 'mentor';
@@ -562,21 +630,23 @@ function renderTasks() {
         <td class="col-center" style="padding: 14px 16px;">
           <span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${statusText}</span>
         </td>
-        <td style="padding: 14px 16px; font-size: 0.85rem; color: ${isOverdue ? '#dc2626' : '#4b5563'}; font-weight: ${isOverdue ? '600' : '400'};">
-          ${task.endDate || '-'}
+        <td style="padding: 14px 16px; font-size: 0.85rem; color: ${isOverdue ? '#dc2626' : isSoon ? '#b45309' : '#4b5563'}; font-weight: ${isOverdue ? '600' : '400'};">
+          ${task.endDate || '-'}${isSoon ? ' <span class="tag-soon">Segera</span>' : ''}
         </td>
         <td style="padding: 14px 16px;">
           ${driveHref
             ? `<a class="btn-drive" href="${escapeHtml(driveHref)}" target="_blank" rel="noopener noreferrer">${driveIcon}Buka Drive</a>`
             : '<span style="font-size: 0.75rem; color: #9ca3af;">-</span>'}
         </td>
-        <td class="col-right" style="padding: 14px 16px;">
-          <div style="display: flex; justify-content: flex-end; gap: 6px;">
+        <td class="col-center" style="padding: 14px 16px;">
+          <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 6px;">
             ${canStart ? `<button class="btn-sm" style="font-size: 0.75rem; padding: 4px 10px;" onclick="moveTask('${task.id}','progress')">▶ Mulai</button>` : ''}
             ${canReport ? `<button class="btn-sm" style="font-size: 0.75rem; padding: 4px 10px;" onclick="openReportModal('${task.id}')">📤 Lapor</button>` : ''}
             ${canValidate ? `<button class="btn-sm btn-success" style="font-size: 0.75rem; padding: 4px 10px;" onclick="openReviewModal('${task.id}')">Detail & Nilai</button>` : ''}
             ${canReopen ? `<button class="btn-sm btn-warning" style="font-size: 0.75rem; padding: 4px 10px;" onclick="moveTask('${task.id}','review')">↩ Buka</button>` : ''}
-            ${!canStart && !canReport && !canValidate && !canReopen ? `<span style="font-size: 0.75rem; color: #9ca3af;">-</span>` : ''}
+            ${isMentor ? `<button class="btn-sm btn-ghost" onclick="openEditTaskModal('${task.id}')">Edit</button><button class="btn-sm btn-warning" onclick="deleteTask('${task.id}')">Hapus</button>` : ''}
+            ${(task.history || []).length ? `<button class="btn-sm btn-ghost" onclick="openHistoryModal('${task.id}')">Riwayat</button>` : ''}
+            ${!canStart && !canReport && !canValidate && !canReopen && !isMentor && !(task.history || []).length ? `<span style="font-size: 0.75rem; color: #9ca3af;">-</span>` : ''}
           </div>
         </td>
       </tr>`;
@@ -632,7 +702,7 @@ function renderDivisionManagement() {
         <td style="padding: 10px; color: #6b7280; font-size: 0.85rem;">${escapeHtml(m.email)}</td>
         <td class="col-center" style="padding: 10px;"><span class="role-badge ${m.role}">${m.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></td>
         <td style="padding: 10px; font-size: 0.85rem;">${escapeHtml(m.division || 'Umum')}</td>
-        <td class="col-center" style="padding: 10px;"><button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button></td>
+        <td class="col-center" style="padding: 10px;"><button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button>${m.id !== state.user.uid ? ` <button class="btn-sm btn-warning" onclick="removeMember('${m.id}')">Keluarkan</button>` : ''}</td>
       </tr>`).join('');
   }
 }
@@ -660,6 +730,115 @@ window.openEditMemberModal = (memberId) => {
   $('editMemberDivision').value = mem.division || 'Umum';
   $('editMemberModal').classList.remove('hidden');
 };
+
+window.openEditTaskModal = (id) => {
+  const t = state.tasks.find(x => x.id === id); if (!t) return;
+  const sel = $('editTaskAssignee');
+  sel.innerHTML = state.members.filter(m => m.role === 'worker').map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+  if (![...sel.options].some(o => o.value === t.assignee)) sel.insertAdjacentHTML('afterbegin', `<option value="${escapeHtml(t.assignee)}">${escapeHtml(t.assignee)}</option>`);
+  sel.value = t.assignee;
+  $('editTaskId').value = id; $('editTaskTitle').value = t.title || '';
+  $('editTaskDifficulty').value = (t.difficulty || 'sedang').toLowerCase();
+  $('editTaskStart').value = t.startDate || ''; $('editTaskEnd').value = t.endDate || '';
+  $('editTaskDesc').value = t.desc || '';
+  $('editTaskModal').classList.remove('hidden');
+};
+
+window.deleteTask = async (id) => {
+  if (state.role !== 'mentor' || !confirm('Hapus tugas ini? Tindakan tidak bisa dibatalkan.')) return;
+  try { await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', id)); }
+  catch (err) { alert('Gagal: ' + err.message); }
+};
+
+window.openHistoryModal = (id) => {
+  const t = state.tasks.find(x => x.id === id); if (!t) return;
+  const label = { laporan: '📤 Laporan', revisi: '↩ Revisi', selesai: '✅ Divalidasi' };
+  $('historyTitle').textContent = t.title;
+  $('historyList').innerHTML = [...(t.history || [])].sort((a, b) => b.at - a.at).map(h => `
+    <div class="hist-item hist-${escapeHtml(h.type)}">
+      <div class="hist-head"><strong>${label[h.type] || escapeHtml(h.type)}</strong> · ${escapeHtml(h.by || '')}<span>${new Date(h.at).toLocaleString('id-ID')}</span></div>
+      ${h.text ? `<div>${escapeHtml(h.text)}</div>` : ''}
+      ${safeUrl(h.link) ? `<a href="${escapeHtml(safeUrl(h.link))}" target="_blank" rel="noopener noreferrer">🔗 Buka file</a>` : ''}
+    </div>`).join('') || '<p class="empty-hint">Belum ada riwayat.</p>';
+  $('historyModal').classList.remove('hidden');
+};
+
+window.removeMember = async (memberId) => {
+  const m = state.members.find(x => x.id === memberId);
+  if (!m || memberId === state.user.uid || !confirm(`Keluarkan ${m.name} dari ruang kerja ini?`)) return;
+  try { await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'members', memberId)); }
+  catch (err) { alert('Gagal: ' + err.message); }
+};
+
+async function leaveWorkspace() {
+  if (state.role === 'mentor' && state.members.filter(m => m.role === 'mentor').length <= 1) {
+    return alert('Anda mentor terakhir. Jadikan anggota lain mentor, atau hapus ruang kerja.');
+  }
+  if (!confirm('Keluar dari ruang kerja ini?')) return;
+  try {
+    const uid = state.user.uid, wsId = state.workspaceId;
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'workspaces', wsId, 'members', uid));
+    batch.set(doc(db, 'users', uid), { workspaceIds: arrayRemove(wsId) }, { merge: true });
+    await batch.commit();
+    backToDashboard();
+  } catch (err) { alert('Gagal: ' + err.message); }
+}
+
+async function changeJoinCode() {
+  const input = prompt('Kode undangan baru (6 huruf/angka). Kosongkan untuk dibuat acak:');
+  if (input === null) return;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = (input.trim() || Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')).toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(code)) return alert('Kode harus tepat 6 huruf atau angka.');
+  try {
+    const dup = await getDocs(query(collection(db, 'workspaces'), where('joinCode', '==', code), limit(1)));
+    if (!dup.empty) return alert('Kode sudah dipakai ruang kerja lain.');
+    await updateDoc(doc(db, 'workspaces', state.workspaceId), { joinCode: code });
+    alert('✅ Kode undangan diganti menjadi ' + code);
+  } catch (err) { alert('Gagal: ' + err.message); }
+}
+
+async function deleteWorkspace() {
+  const typed = prompt(`Hapus ruang kerja beserta semua tugasnya? Ketik nama ruang kerja ("${state.workspaceName}") untuk konfirmasi:`);
+  if (typed === null) return;
+  if (typed.trim() !== state.workspaceName) return alert('Nama tidak cocok. Penghapusan dibatalkan.');
+  try {
+    const wsId = state.workspaceId;
+    const refs = [];
+    for (const sub of ['tasks', 'divisions', 'members']) {
+      (await getDocs(collection(db, 'workspaces', wsId, sub))).forEach(d => refs.push(d.ref));
+    }
+    refs.push(doc(db, 'workspaces', wsId));
+    unsubscribers.forEach(u => u()); unsubscribers = [];
+    for (let i = 0; i < refs.length; i += 400) {
+      const batch = writeBatch(db);
+      refs.slice(i, i + 400).forEach(r => batch.delete(r));
+      await batch.commit();
+    }
+    await setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayRemove(wsId) }, { merge: true });
+    backToDashboard();
+  } catch (err) { alert('Gagal menghapus: ' + err.message); }
+}
+
+async function renameUser(newName, oldName) {
+  await updateProfile(auth.currentUser, { displayName: newName });
+  const uid = state.user.uid;
+  const userSnap = await getDoc(doc(db, 'users', uid));
+  const ids = userSnap.exists() ? (userSnap.data().workspaceIds || []) : [];
+  await setDoc(doc(db, 'users', uid), { displayName: newName }, { merge: true });
+  for (const id of ids) {
+    const mRef = doc(db, 'workspaces', id, 'members', uid);
+    if (!(await getDoc(mRef)).exists()) continue;
+    const tasks = await getDocs(query(collection(db, 'workspaces', id, 'tasks'), where('assignee', '==', oldName)));
+    const batch = writeBatch(db);
+    batch.update(mRef, { name: newName });
+    tasks.forEach(t => batch.update(t.ref, { assignee: newName }));
+    await batch.commit();
+  }
+  state.user = auth.currentUser;
+  $('userEmailDisplay').textContent = newName;
+}
 
 window.moveTask = async (taskId, newStatus) => {
   const t = state.tasks.find(x => x.id === taskId);
@@ -889,6 +1068,7 @@ function setupEventListeners() {
         status: 'review',
         reportNotes: notes,
         reportFileLink: reportLink,
+        history: arrayUnion({ type: 'laporan', by: state.workerName, text: notes, link: reportLink, at: Date.now() }),
         revisionNotes: '',
         updatedAt: serverTimestamp()
       });
@@ -905,6 +1085,7 @@ function setupEventListeners() {
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
         status: 'done',
+        history: arrayUnion({ type: 'selesai', by: state.workerName, text: $('mentorReviewNotes').value.trim(), at: Date.now() }),
         revisionNotes: '',
         updatedAt: serverTimestamp()
       });
@@ -922,11 +1103,54 @@ function setupEventListeners() {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
         status: 'progress',
         revisionNotes: revNotes,
+        history: arrayUnion({ type: 'revisi', by: state.workerName, text: revNotes, at: Date.now() }),
         updatedAt: serverTimestamp()
       });
       $('reviewModal').classList.add('hidden');
       alert('↩ Catatan revisi dikirimkan ke pekerja!');
     } catch (err) { alert('Gagal: ' + err.message); }
+  });
+
+  ['taskSearch', 'filterStatus', 'filterDifficulty', 'filterDue', 'filterAssignee'].forEach(id =>
+    $(id)?.addEventListener(id === 'taskSearch' ? 'input' : 'change', renderTasks));
+  $('leaveWorkspaceBtn').addEventListener('click', leaveWorkspace);
+  $('changeCodeBtn').addEventListener('click', changeJoinCode);
+  $('deleteWorkspaceBtn').addEventListener('click', deleteWorkspace);
+  $('accountBtn').addEventListener('click', () => {
+    $('accountName').value = state.user.displayName || state.user.email.split('@')[0];
+    $('accountPassword').value = '';
+    $('accountModal').classList.remove('hidden');
+  });
+
+  $('editTaskForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (state.role !== 'mentor') return;
+    const startDate = $('editTaskStart').value, endDate = $('editTaskEnd').value;
+    if (endDate < startDate) return alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
+    try {
+      await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', $('editTaskId').value), {
+        title: $('editTaskTitle').value.trim(), assignee: $('editTaskAssignee').value,
+        difficulty: $('editTaskDifficulty').value, startDate, endDate,
+        desc: $('editTaskDesc').value.trim(), updatedAt: serverTimestamp()
+      });
+      $('editTaskModal').classList.add('hidden');
+    } catch (err) { alert('Gagal: ' + err.message); }
+  });
+
+  $('accountForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newName = $('accountName').value.trim(), newPw = $('accountPassword').value;
+    const oldName = state.user.displayName || state.user.email.split('@')[0];
+    try {
+      if (newPw) await updatePassword(auth.currentUser, newPw);
+      if (newName && newName !== oldName) await renameUser(newName, oldName);
+      $('accountModal').classList.add('hidden');
+      alert('✅ Akun diperbarui!');
+    } catch (err) {
+      alert(err.code === 'auth/requires-recent-login'
+        ? 'Demi keamanan, keluar lalu masuk lagi sebelum mengganti kata sandi.'
+        : 'Gagal: ' + (err.code ? mapAuthError(err.code) : err.message));
+    }
   });
 
   $('closeModalBtn').addEventListener('click', () => $('reportModal').classList.add('hidden'));
