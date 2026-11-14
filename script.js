@@ -374,7 +374,6 @@ function subscribeToWorkspace() {
     (snap) => {
       state.tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderKanban();
-      updateKpiProgress();
       setLiveStatus(true);
     },
     (err) => { console.error(err); setLiveStatus(false); }
@@ -467,12 +466,21 @@ function renderKanban() {
     else if (task.status === 'review') { statusBg = '#f3e8ff'; statusColor = '#6b21a8'; statusText = 'Dinilai'; }
     else if (task.status === 'done') { statusBg = '#dcfce7'; statusColor = '#15803d'; statusText = 'Selesai'; }
 
-    let diffBg = '#fef3c7';
-    let diffColor = '#92400e';
-    let diffText = 'Sedang';
-    const kpiVal = Number(task.kpi) || 10;
-    if (kpiVal > 15) { diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi'; }
-    else if (kpiVal < 8) { diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah'; }
+    // Tingkat kesulitan: prioritaskan field difficulty, fallback ke angka kpi lama
+    let diffBg = '#fef3c7', diffColor = '#92400e', diffText = 'Sedang';
+    const diffRaw = (task.difficulty || '').toLowerCase();
+    if (diffRaw === 'tinggi' || diffRaw === 'high') {
+      diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi';
+    } else if (diffRaw === 'rendah' || diffRaw === 'low') {
+      diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah';
+    } else if (diffRaw === 'sedang' || diffRaw === 'medium') {
+      diffBg = '#fef3c7'; diffColor = '#92400e'; diffText = 'Sedang';
+    } else {
+      // kompatibilitas data lama berbasis angka KPI
+      const kpiVal = Number(task.kpi) || 10;
+      if (kpiVal > 15) { diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi'; }
+      else if (kpiVal < 8) { diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah'; }
+    }
 
     return `
       <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='transparent'">
@@ -487,7 +495,7 @@ function renderKanban() {
           <div style="font-size: 0.75rem; color: #9ca3af;">(Anggota Tim)</div>
         </td>
         <td style="padding: 14px 16px;">
-          <span style="background: ${diffBg}; color: ${diffColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${diffText} (${kpiVal})</span>
+          <span style="background: ${diffBg}; color: ${diffColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${diffText}</span>
         </td>
         <td style="padding: 14px 16px;">
           <span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${statusText}</span>
@@ -668,35 +676,90 @@ function setupEventListeners() {
     });
   });
 
-  $('saveDriveBtn').addEventListener('click', async () => {
-    const link = $('driveLinkInput').value.trim();
-    try {
-      await updateDoc(doc(db, 'workspaces', state.workspaceId), { driveLink: link });
-      alert('✅ Link Google Drive disimpan!');
-    } catch (err) { alert('Gagal: ' + err.message); }
-  });
+  // Tombol simpan link drive (muncul saat pilih sumber workspace)
+  if ($('saveDriveBtn')) {
+    $('saveDriveBtn').addEventListener('click', async () => {
+      const link = ($('driveLinkInput')?.value || '').trim();
+      try {
+        await updateDoc(doc(db, 'workspaces', state.workspaceId), { driveLink: link });
+        alert('✅ Link Google Drive disimpan!');
+      } catch (err) { alert('Gagal: ' + err.message); }
+    });
+  }
+
+  // Tampilkan / sembunyikan input drive sesuai pilihan sumber
+  function toggleWorkspaceDriveGroup() {
+    const group = $('workspaceDriveGroup');
+    const source = $('taskDriveSource');
+    if (!group || !source) return;
+    group.style.display = source.value === 'workspace' ? 'block' : 'none';
+  }
+  if ($('taskDriveSource')) {
+    $('taskDriveSource').addEventListener('change', toggleWorkspaceDriveGroup);
+    toggleWorkspaceDriveGroup(); // initial
+  }
+
+  // Validasi: tenggat waktu tidak boleh lebih awal dari tanggal mulai
+  function syncEndDateMin() {
+    const startEl = $('startDate');
+    const endEl = $('endDate');
+    if (!startEl || !endEl) return;
+    if (startEl.value) {
+      endEl.min = startEl.value;
+      if (endEl.value && endEl.value < startEl.value) {
+        endEl.value = startEl.value;
+      }
+    }
+  }
+  if ($('startDate')) {
+    $('startDate').addEventListener('change', syncEndDateMin);
+  }
+  if ($('endDate')) {
+    $('endDate').addEventListener('change', () => {
+      const startEl = $('startDate');
+      const endEl = $('endDate');
+      if (startEl?.value && endEl.value && endEl.value < startEl.value) {
+        alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
+        endEl.value = startEl.value;
+      }
+    });
+  }
 
   $('createTaskForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = $('taskTitle').value.trim();
     const assignee = $('taskAssignee').value;
+    const difficulty = ($('taskDifficulty')?.value || 'sedang').toLowerCase();
     const driveSource = $('taskDriveSource').value;
+    const startDate = $('startDate').value;
+    const endDate = $('endDate').value;
+
     if (!title || !assignee) return alert('Judul & assignee wajib diisi!');
+    if (startDate && endDate && endDate < startDate) {
+      return alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
+    }
+
     try {
       await addDoc(collection(db, 'workspaces', state.workspaceId, 'tasks'), {
-        title, assignee,
-        kpi: parseInt($('taskKpi').value, 10) || 10,
-        startDate: $('startDate').value,
-        endDate: $('endDate').value,
+        title,
+        assignee,
+        difficulty,          // rendah | sedang | tinggi
+        startDate,
+        endDate,
         desc: $('taskDesc').value.trim(),
-        driveSource: driveSource,
+        driveSource,
         status: 'todo',
-        reportNotes: '', reportFileLink: '', revisionNotes: '',
-        createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        reportNotes: '',
+        reportFileLink: '',
+        revisionNotes: '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
       e.target.reset();
-      $('taskKpi').value = 10;
+      if ($('taskDifficulty')) $('taskDifficulty').value = 'sedang';
       setDefaultDates();
+      syncEndDateMin();
+      toggleWorkspaceDriveGroup();
       alert('✅ Tugas berhasil dibagikan!');
     } catch (err) { alert('Gagal: ' + err.message); }
   });
