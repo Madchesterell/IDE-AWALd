@@ -154,14 +154,14 @@
     </header>
 
     <div class="workspace-body">
-        <!-- Sidebar kiri (hanya Mentor) -->
-        <aside id="mentorNavTabs" class="workspace-sidebar hidden">
+        <!-- Sidebar kiri (Muncul untuk Mentor maupun Pekerja) -->
+        <aside id="workspaceSidebar" class="workspace-sidebar">
             <div class="ws-sidebar-section">
-                <span class="ws-sidebar-label">Menu</span>
+                <span class="ws-sidebar-label">Menu Ruang Kerja</span>
                 <button type="button" id="tabTaskView" class="ws-nav-item active">
-                    <span class="menu-icon">▦</span> Papan Tugas
+                    <span class="menu-icon">▦</span> <span id="tabTaskLabel">Papan Tugas</span>
                 </button>
-                <button type="button" id="tabDivisionView" class="ws-nav-item">
+                <button type="button" id="tabDivisionView" class="ws-nav-item hidden">
                     <span class="menu-icon">◎</span> Manajemen Divisi
                 </button>
             </div>
@@ -228,12 +228,20 @@
                 </div>
             </section>
 
-            <!-- Target Harian (khusus pekerja) -->
-            <div id="workerDailyGoalBox" class="daily-goal-box card hidden" style="margin-bottom: 1.25rem;">
-                <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
-                <button type="button" id="saveDailyGoalBtn" class="btn-primary" style="width: auto; padding: 0.55rem 1rem;">Catat Target Harian</button>
-                <span id="dailyGoalDisplay" class="goal-badge"></span>
-            </div>
+           <!-- Target Harian (khusus pekerja) -->
+            <section id="workerDailyGoalBox" class="card hidden" style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 700; color: var(--text); margin: 0;">🎯 Target Harian Anda</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Catat fokus atau target penyelesaian tugas Anda hari ini.</p>
+                    </div>
+                    <span id="dailyGoalDisplay" class="goal-badge"></span>
+                </div>
+                <div class="daily-goal-form">
+                    <input type="text" id="dailyGoalInput" placeholder="Contoh: Menyelesaikan rigging karakter utama sebelum jam 4 sore...">
+                    <button type="button" id="saveDailyGoalBtn" class="btn-primary">Simpan Target</button>
+                </div>
+            </section>
 
             <!-- Tabel Daftar Tugas Horizontal -->
             <section class="card" style="padding: 0; overflow: hidden;">
