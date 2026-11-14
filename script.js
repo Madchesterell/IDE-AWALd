@@ -117,20 +117,32 @@ function summarizeTasks(tasks, role, myName) {
   return { c, total: mine.length, byMember, action: tasks.filter(t => needsAction(t, role, myName)).length };
 }
 
-function wsStatsHtml(ws) {
+/* =========================================
+   FUNGSI BARU: Render stats pills untuk kartu ruang kerja
+   Hanya menampilkan: perlu tindakan, Belum, Berjalan, Dinilai, Selesai (+ Terlambat jika ada)
+========================================= */
+function wsStatsPillsHtml(ws) {
   if (!ws.stats) return '';
-  const { c, byMember, action } = ws.stats;
-  const members = Object.entries(byMember).slice(0, 5).map(([n, m]) =>
-    `<div class="mini-progress"><span>${escapeHtml(n)}</span><div class="bar"><i style="width:${m.total ? Math.round(m.done / m.total * 100) : 0}%"></i></div><small>${m.done}/${m.total}</small></div>`
-  ).join('');
-  return `<div class="ws-stats">
-    ${action ? `<span class="action-badge">${action} perlu tindakan</span>` : ''}
-    <span class="stat">${c.todo} Belum</span>
-    <span class="stat s-progress">${c.progress} Berjalan</span>
-    <span class="stat s-review">${c.review} Dinilai</span>
-    <span class="stat s-done">${c.done} Selesai</span>
-    ${c.overdue ? `<span class="stat s-late">${c.overdue} Terlambat</span>` : ''}
-  </div>${members ? `<div class="ws-members-progress">${members}</div>` : ''}`;
+  const { c, action } = ws.stats;
+  const pills = [];
+
+  // "Perlu tindakan" - hanya tampilkan jika > 0
+  if (action > 0) {
+    pills.push(`<span class="stat-pill s-action"><span class="stat-num">${action}</span> perlu tindakan</span>`);
+  }
+
+  // Status dasar: selalu tampilkan
+  pills.push(`<span class="stat-pill s-todo"><span class="stat-num">${c.todo}</span> Belum</span>`);
+  pills.push(`<span class="stat-pill s-progress"><span class="stat-num">${c.progress}</span> Berjalan</span>`);
+  pills.push(`<span class="stat-pill s-review"><span class="stat-num">${c.review}</span> Dinilai</span>`);
+  pills.push(`<span class="stat-pill s-done"><span class="stat-num">${c.done}</span> Selesai</span>`);
+
+  // Terlambat - hanya tampilkan jika > 0
+  if (c.overdue > 0) {
+    pills.push(`<span class="stat-pill s-late"><span class="stat-num">${c.overdue}</span> Terlambat</span>`);
+  }
+
+  return `<div class="workspace-card-stats">${pills.join('')}</div>`;
 }
 
 function localDate(d = new Date()) {
@@ -370,19 +382,32 @@ async function loadUserWorkspaces() {
   }
 }
 
+/* =========================================
+   FUNGSI YANG DIUBAH: renderWorkspaceList
+   Kartu sekarang hanya menampilkan:
+   - Nama Ruang Kerja + badge role
+   - Stats pills (perlu tindakan, Belum, Berjalan, Dinilai, Selesai)
+========================================= */
 function renderWorkspaceList(workspaces) {
-  const cardMarkup = (ws, preview = false) => `
+  const cardMarkup = (ws) => `
     <div class="workspace-card" role="button" tabindex="0" onclick="openWorkspace('${ws.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWorkspace('${ws.id}')}">
       <div class="workspace-card-header">
         <h3>${escapeHtml(ws.name)}</h3>
         <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span>
       </div>
-      ${!preview && ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
-      ${wsStatsHtml(ws)}
+      ${wsStatsPillsHtml(ws)}
     </div>`;
   const empty = '<p class="empty-hint">Belum ada ruang kerja. Silakan buat atau gabung terlebih dahulu.</p>';
-  if ($('workspaceList')) $('workspaceList').innerHTML = workspaces.length ? `<div class="workspace-grid">${workspaces.map(ws => cardMarkup(ws)).join('')}</div>` : empty;
-  if ($('dashboardWorkspacePreview')) $('dashboardWorkspacePreview').innerHTML = workspaces.length ? `<div class="workspace-grid">${workspaces.slice(0, 3).map(ws => cardMarkup(ws, true)).join('')}</div>` : empty;
+  if ($('workspaceList')) {
+    $('workspaceList').innerHTML = workspaces.length
+      ? `<div class="workspace-grid">${workspaces.map(ws => cardMarkup(ws)).join('')}</div>`
+      : empty;
+  }
+  if ($('dashboardWorkspacePreview')) {
+    $('dashboardWorkspacePreview').innerHTML = workspaces.length
+      ? `<div class="workspace-grid">${workspaces.slice(0, 3).map(ws => cardMarkup(ws)).join('')}</div>`
+      : empty;
+  }
 }
 
 async function handleCreateWorkspace(e) {
@@ -969,8 +994,18 @@ function setupEventListeners() {
       alert('Tautan reset kata sandi dikirim ke ' + email + '.');
     } catch (err) { alert('Gagal: ' + mapAuthError(err.code)); }
   });
+
+  // Tombol Buat & Gabung sekarang ada di halaman Ruang Kerja Saya
   $('createWorkspaceBtn').addEventListener('click', () => $('createWorkspaceModal').classList.remove('hidden'));
   $('joinWorkspaceBtn').addEventListener('click', () => $('joinWorkspaceModal').classList.remove('hidden'));
+
+  // Tombol Pengaturan Akun sekarang ada di sidebar
+  $('accountBtn').addEventListener('click', () => {
+    $('accountName').value = state.user.displayName || state.user.email.split('@')[0];
+    $('accountPassword').value = '';
+    $('accountModal').classList.remove('hidden');
+  });
+
   $('dashboardNavBtn').addEventListener('click', () => switchDashboardSection('home'));
   $('myWorkspacesNavBtn').addEventListener('click', () => switchDashboardSection('workspaces'));
   $('notificationsNavBtn').addEventListener('click', () => switchDashboardSection('notifications'));
@@ -1130,11 +1165,6 @@ function setupEventListeners() {
   $('leaveWorkspaceBtn').addEventListener('click', leaveWorkspace);
   $('changeCodeBtn').addEventListener('click', changeJoinCode);
   $('deleteWorkspaceBtn').addEventListener('click', deleteWorkspace);
-  $('accountBtn')?.addEventListener('click', () => {
-    $('accountName').value = state.user.displayName || state.user.email.split('@')[0];
-    $('accountPassword').value = '';
-    $('accountModal').classList.remove('hidden');
-  });
 
   $('editTaskForm').addEventListener('submit', async (e) => {
     e.preventDefault();
