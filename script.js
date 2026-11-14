@@ -802,7 +802,7 @@ function init() {
       }
       showDashboardView();
       
-      // Pindahkan setupEventListeners ke sini agar elemen di dashboard sudah aktif/muncul
+      // Event listener dipasang di sini saat elemen dashboard sudah tampil
       setupEventListeners();
 
       ensureUserDoc(user).catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err));
