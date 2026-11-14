@@ -145,16 +145,12 @@
 <div id="workspaceView" class="hidden">
     <header class="navbar">
         <div class="brand" style="display: flex; align-items: center; gap: 10px;">
-            <button type="button" id="backToDashboardBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">← Kembali</button>
-            <h1 id="workspaceTitle" style="font-size: 1.1rem;">Ruang Kerja</h1>
-            <span class="badge-capacity" id="workerCountDisplay">Anggota: 0 / 20</span>
-            <span class="badge-live" id="liveStatus">● Menghubungkan...</span>
+            <h1 id="workspaceTitle" style="font-size: 1.1rem; font-weight: 700;">Ruang Kerja</h1>
         </div>
         <div class="role-controls" id="roleControls"></div>
     </header>
 
     <div class="workspace-body">
-        <!-- Sidebar kiri (Muncul untuk Mentor maupun Pekerja) -->
         <aside id="workspaceSidebar" class="workspace-sidebar">
             <div class="ws-sidebar-section">
                 <span class="ws-sidebar-label">Menu Ruang Kerja</span>
@@ -163,6 +159,12 @@
                 </button>
                 <button type="button" id="tabDivisionView" class="ws-nav-item hidden">
                     <span class="menu-icon">◎</span> Manajemen Divisi
+                </button>
+            </div>
+            <!-- Tombol Kembali dipindahkan ke bagian bawah sidebar -->
+            <div class="ws-sidebar-footer" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <button type="button" id="backToDashboardBtn" class="ws-nav-item" style="background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3);">
+                    <span class="menu-icon">←</span> Kembali ke Dashboard
                 </button>
             </div>
         </aside>
