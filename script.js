@@ -505,7 +505,7 @@ function renderTasks() {
   }
 
   if (filteredTasks.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">Belum ada tugas dalam daftar.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">Belum ada tugas dalam daftar.</td></tr>`;
     return;
   }
 
@@ -518,6 +518,9 @@ function renderTasks() {
     const canReport = isWorker && task.status === 'progress' && task.assignee === state.workerName;
     const canValidate = isMentor && task.status === 'review';
     const canReopen = isMentor && task.status === 'done';
+
+    const driveHref = safeUrl(task.reportFileLink);
+    const driveIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 
     let statusBg = '#f3f4f6';
     let statusColor = '#374151';
@@ -543,10 +546,11 @@ function renderTasks() {
     return `
       <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='transparent'">
         <td style="padding: 14px 16px;">
-          <div style="font-weight: 600; color: #1f2937; font-size: 0.92rem;">${escapeHtml(task.title)}</div>
-          <div style="font-size: 0.78rem; color: #6b7280; margin-top: 2px;">${escapeHtml(task.desc || 'Tanpa keterangan tambahan')}</div>
-          ${safeUrl(task.reportFileLink) ? `<a href="${escapeHtml(safeUrl(task.reportFileLink))}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: #2563eb; text-decoration: underline; display: inline-block; margin-top: 2px;">🔗 Lihat File Drive</a>` : ''}
-          ${task.revisionNotes ? `<div style="font-size: 0.75rem; color: #92400e; background: #fffbeb; padding: 2px 6px; border-radius: 4px; margin-top: 2px;">⚠️ Revisi: ${escapeHtml(task.revisionNotes)}</div>` : ''}
+          <div class="task-title">${escapeHtml(task.title)}</div>
+        </td>
+        <td class="task-desc-cell" style="padding: 14px 16px;">
+          <div class="task-desc${task.desc ? '' : ' empty'}">${escapeHtml(task.desc || 'Tanpa keterangan tambahan')}</div>
+          ${task.revisionNotes ? `<div class="task-revision">⚠️ Revisi: ${escapeHtml(task.revisionNotes)}</div>` : ''}
         </td>
         <td style="padding: 14px 16px; font-size: 0.88rem; color: #4b5563;">
           <div>${escapeHtml(task.assignee)}</div>
@@ -560,6 +564,11 @@ function renderTasks() {
         </td>
         <td style="padding: 14px 16px; font-size: 0.85rem; color: ${isOverdue ? '#dc2626' : '#4b5563'}; font-weight: ${isOverdue ? '600' : '400'};">
           ${task.endDate || '-'}
+        </td>
+        <td style="padding: 14px 16px;">
+          ${driveHref
+            ? `<a class="btn-drive" href="${escapeHtml(driveHref)}" target="_blank" rel="noopener noreferrer">${driveIcon}Buka Drive</a>`
+            : '<span style="font-size: 0.75rem; color: #9ca3af;">-</span>'}
         </td>
         <td style="padding: 14px 16px; text-align: right;">
           <div style="display: flex; justify-content: flex-end; gap: 6px;">
