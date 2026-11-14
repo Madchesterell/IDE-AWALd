@@ -36,6 +36,8 @@ let state = {
 };
 
 let unsubscribers = [];
+let dashboardWorkspaces = [];
+let dashboardNotifications = [];
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(str) {
@@ -125,7 +127,59 @@ function showDashboardView() {
   $('dashboardView').classList.remove('hidden');
   $('workspaceView').classList.add('hidden');
   $('userEmailDisplay').textContent = state.user?.displayName || state.user?.email || '';
+  const initials = (state.user?.displayName || state.user?.email || 'WP')
+    .split(/[\\s@._-]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
+  if ($('userAvatarInitials')) $('userAvatarInitials').textContent = initials || 'WP';
   loadUserWorkspaces();
+  switchDashboardSection('home');
+}
+
+function switchDashboardSection(section) {
+  const panels = { home: 'dashboardHomePanel', workspaces: 'myWorkspacesPanel', notifications: 'notificationsPanel' };
+  Object.entries(panels).forEach(([key, id]) => $(id)?.classList.toggle('hidden', key !== section));
+  $('dashboardNavBtn')?.classList.toggle('active', section === 'home');
+  $('myWorkspacesNavBtn')?.classList.toggle('active', section === 'workspaces');
+  $('notificationsNavBtn')?.classList.toggle('active', section === 'notifications');
+  $('dashboardPageTitle').textContent = ({ home: 'Dashboard', workspaces: 'Ruang Kerja Saya', notifications: 'Notifikasi' })[section] || 'Dashboard';
+  if (section === 'notifications') renderDashboardNotifications();
+}
+
+function buildDashboardNotifications(workspaces) {
+  const items = [];
+  workspaces.forEach(ws => (ws.tasks || []).forEach(task => {
+    const relevant = ws.role === 'mentor' || task.assignee === ws.workerName;
+    if (!relevant) return;
+    if (needsAction(task, ws.role, ws.workerName)) items.push({ ...task, workspaceId: ws.id, workspaceName: ws.name, kind: 'action', role: ws.role });
+    if (task.status === 'done') items.push({ ...task, workspaceId: ws.id, workspaceName: ws.name, kind: 'done', role: ws.role });
+  }));
+  return items.sort((a, b) => (a.kind === b.kind ? String(b.endDate || '').localeCompare(String(a.endDate || '')) : a.kind === 'action' ? -1 : 1));
+}
+
+function renderDashboardNotifications() {
+  const list = $('dashboardNotificationsList');
+  const summary = $('dashboardNotificationSummary');
+  const actions = dashboardNotifications.filter(item => item.kind === 'action');
+  const completed = dashboardNotifications.filter(item => item.kind === 'done');
+  const badge = $('dashboardNotificationBadge');
+  if (badge) { badge.textContent = actions.length; badge.classList.toggle('hidden', actions.length === 0); }
+  if (summary) {
+    summary.innerHTML = `
+      <button type="button" class="notification-summary-card needs-action" data-open-notifications><span class="notification-summary-icon">◷</span><span><strong>${actions.length}</strong><small>Perlu tindakan</small></span></button>
+      <button type="button" class="notification-summary-card completed" data-open-notifications><span class="notification-summary-icon">✓</span><span><strong>${completed.length}</strong><small>Selesai</small></span></button>`;
+    summary.querySelectorAll('[data-open-notifications]').forEach(button => button.addEventListener('click', () => switchDashboardSection('notifications')));
+  }
+  if (!list) return;
+  if (!dashboardNotifications.length) {
+    list.innerHTML = '<p class="empty-hint">Belum ada notifikasi. Aktivitas tugas akan muncul di sini.</p>';
+    return;
+  }
+  list.innerHTML = dashboardNotifications.map(item => `
+    <article class="dashboard-notification-item">
+      <span class="notification-status-dot ${item.kind === 'done' ? 'is-done' : 'is-action'}"></span>
+      <div class="dashboard-notification-copy"><strong>${escapeHtml(item.title || 'Tugas tanpa judul')}</strong>
+      <p>${escapeHtml(item.workspaceName)} · ${item.kind === 'done' ? 'Tugas selesai' : (item.role === 'mentor' ? 'Menunggu penilaian' : 'Perlu tindakan')}</p></div>
+      <span class="notification-kind ${item.kind}">${item.kind === 'done' ? 'Selesai' : 'Perlu tindakan'}</span>
+    </article>`).join('');
 }
 
 function showWorkspaceView() {
@@ -133,17 +187,17 @@ function showWorkspaceView() {
   $('dashboardView').classList.add('hidden');
   $('workspaceView').classList.remove('hidden');
   $('workspaceTitle').textContent = state.workspaceName || 'Ruang Kerja';
-  
+
   const isMentor = state.role === 'mentor';
   const divTab = $('tabDivisionView');
   if (divTab) divTab.classList.toggle('hidden', !isMentor);
-  
+
   const taskLabel = $('tabTaskLabel');
   if (taskLabel) taskLabel.textContent = isMentor ? 'Papan Tugas' : 'Tugas Saya';
 
   $('mentorPanel').classList.toggle('hidden', !isMentor);
   $('workerDailyGoalBox').classList.toggle('hidden', isMentor);
-  
+
   $('roleControls').innerHTML = `
     <span style="font-size:0.8rem;color:var(--text-muted);">
       ${isMentor ? 'Mentor / Admin' : 'Anggota'} ·
@@ -164,6 +218,12 @@ function switchWorkspaceTab(tabName) {
     if (divBtn) { divBtn.classList.remove('active');  }
   } else {
     $('mainTaskContainer').classList.add('hidden');
+    $('divisionManagementPanel').classList.remove('hidden');
+    if (taskBtn) { taskBtn.classList.remove('active'); }
+    if (divBtn) { divBtn.classList.add('active'); }
+  }
+}
+
     $('divisionManagementPanel').classList.remove('hidden');
     if (taskBtn) { taskBtn.classList.remove('active');  }
     if (divBtn) { divBtn.classList.add('active');  }
@@ -252,50 +312,51 @@ async function handleLogout() {
 
 async function loadUserWorkspaces() {
   const list = $('workspaceList');
-  list.innerHTML = '<p class="empty-hint">Memuat daftar ruang kerja...</p>';
+  if (list) list.innerHTML = '<p class="empty-hint">Memuat daftar ruang kerja...</p>';
   try {
     const userSnap = await getDoc(doc(db, 'users', state.user.uid));
     const ids = userSnap.exists() ? (userSnap.data().workspaceIds || []) : [];
-    if (ids.length === 0) {
-      list.innerHTML = '<p class="empty-hint">Belum ada ruang kerja. Silakan buat atau gabung terlebih dahulu.</p>';
+    if (!ids.length) {
+      dashboardWorkspaces = [];
+      dashboardNotifications = [];
+      renderWorkspaceList([]);
+      renderDashboardNotifications();
       return;
     }
     const workspaces = await Promise.all(ids.map(async id => {
       const wsSnap = await getDoc(doc(db, 'workspaces', id));
       if (!wsSnap.exists()) return null;
       const memberSnap = await getDoc(doc(db, 'workspaces', id, 'members', state.user.uid));
-      if (!memberSnap.exists()) return null;   // sudah dikeluarkan
-      const role = memberSnap.data().role || 'worker';
-      let stats = null;
+      if (!memberSnap.exists()) return null;
+      const member = memberSnap.data();
+      const role = member.role || 'worker';
+      let tasks = [];
       try {
-        const ts = await getDocs(collection(db, 'workspaces', id, 'tasks'));
-        stats = summarizeTasks(ts.docs.map(d => d.data()), role, memberSnap.data().name);
+        const taskSnap = await getDocs(collection(db, 'workspaces', id, 'tasks'));
+        tasks = taskSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (e) { console.warn('Ringkasan gagal:', e); }
-      return { id, ...wsSnap.data(), role, stats };
+      return { id, ...wsSnap.data(), role, workerName: member.name, tasks, stats: summarizeTasks(tasks, role, member.name) };
     }));
-    renderWorkspaceList(workspaces.filter(Boolean));
+    dashboardWorkspaces = workspaces.filter(Boolean);
+    dashboardNotifications = buildDashboardNotifications(dashboardWorkspaces);
+    renderWorkspaceList(dashboardWorkspaces);
+    renderDashboardNotifications();
   } catch (err) {
     console.error(err);
-    list.innerHTML = `<p class="empty-hint">Gagal memuat: ${escapeHtml(err.message)}</p>`;
+    if (list) list.innerHTML = `<p class="empty-hint">Gagal memuat: ${escapeHtml(err.message)}</p>`;
   }
 }
 
 function renderWorkspaceList(workspaces) {
-  const list = $('workspaceList');
-  if (workspaces.length === 0) {
-    list.innerHTML = '<p class="empty-hint">Belum ada ruang kerja.</p>';
-    return;
-  }
-  list.innerHTML = workspaces.map(ws => `
-    <div class="workspace-card" onclick="openWorkspace('${ws.id}')">
-      <div class="workspace-card-header">
-        <h3>${escapeHtml(ws.name)}</h3>
-        <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span>
-      </div>
-      ${ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
+  const cardMarkup = (ws, preview = false) => `
+    <div class="workspace-card" role="button" tabindex="0" onclick="openWorkspace('${ws.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWorkspace('${ws.id}')}">
+      <div class="workspace-card-header"><h3>${escapeHtml(ws.name)}</h3><span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></div>
+      ${!preview && ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
       ${wsStatsHtml(ws)}
-    </div>
-  `).join('');
+    </div>`;
+  const empty = '<p class="empty-hint">Belum ada ruang kerja. Silakan buat atau gabung terlebih dahulu.</p>';
+  if ($('workspaceList')) $('workspaceList').innerHTML = workspaces.length ? workspaces.map(ws => cardMarkup(ws)).join('') : empty;
+  if ($('dashboardWorkspacePreview')) $('dashboardWorkspacePreview').innerHTML = workspaces.length ? workspaces.slice(0, 3).map(ws => cardMarkup(ws, true)).join('') : empty;
 }
 
 async function handleCreateWorkspace(e) {
@@ -340,7 +401,7 @@ async function handleCreateWorkspace(e) {
     $('createWorkspaceForm').reset();
     showWorkspaceView();
     subscribeToWorkspace();
-    
+
   } catch (err) {
     console.error(err);
     alert('Gagal membuat ruang kerja: ' + err.message);
@@ -383,7 +444,7 @@ async function handleJoinWorkspace(e) {
       const workerCount = membersSnap.docs.filter(d => d.data().role === 'worker').length;
       if (workerCount >= 20) { alert('Ruang kerja sudah penuh (maksimal 20 anggota).'); return; }
       const batch = writeBatch(db);
-      batch.set(myMemberRef, {
+            batch.set(myMemberRef, {
         uid, email: state.user.email, name: myName, role: 'worker', division: 'Umum', joinedAt: serverTimestamp()
       });
       batch.set(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
@@ -581,7 +642,7 @@ function renderTasks() {
     const isOverdue = task.endDate && new Date(task.endDate + 'T23:59:59') < new Date() && task.status !== 'done';
     const isWorker = state.role === 'worker';
     const isMentor = state.role === 'mentor';
-    
+
     const canStart = isWorker && task.status === 'todo' && task.assignee === state.workerName;
     const canReport = isWorker && task.status === 'progress' && task.assignee === state.workerName;
     const canValidate = isMentor && task.status === 'review';
@@ -603,7 +664,7 @@ function renderTasks() {
       diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi';
     } else if (diffRaw === 'rendah' || diffRaw === 'low') {
       diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah';
-    } else if (diffRaw === 'sedang' || diffRaw === 'medium') {
+          } else if (diffRaw === 'sedang' || diffRaw === 'medium') {
       diffBg = '#fef3c7'; diffColor = '#92400e'; diffText = 'Sedang';
     } else {
       const kpiVal = Number(task.kpi) || 10;
@@ -928,6 +989,10 @@ function setupEventListeners() {
 
   $('createWorkspaceBtn').addEventListener('click', () => $('createWorkspaceModal').classList.remove('hidden'));
   $('joinWorkspaceBtn').addEventListener('click', () => $('joinWorkspaceModal').classList.remove('hidden'));
+  $('dashboardNavBtn').addEventListener('click', () => switchDashboardSection('home'));
+  $('myWorkspacesNavBtn').addEventListener('click', () => switchDashboardSection('workspaces'));
+  $('notificationsNavBtn').addEventListener('click', () => switchDashboardSection('notifications'));
+  $('viewAllWorkspacesBtn').addEventListener('click', () => switchDashboardSection('workspaces'));
   $('createWorkspaceForm').addEventListener('submit', handleCreateWorkspace);
   $('joinWorkspaceForm').addEventListener('submit', handleJoinWorkspace);
   $('backToDashboardBtn').addEventListener('click', backToDashboard);
@@ -1039,7 +1104,7 @@ function setupEventListeners() {
         reportNotes: '',
         reportFileLink: '',
         revisionNotes: '',
-        createdAt: serverTimestamp(),
+                createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
       e.target.reset();
@@ -1116,7 +1181,7 @@ function setupEventListeners() {
   $('leaveWorkspaceBtn').addEventListener('click', leaveWorkspace);
   $('changeCodeBtn').addEventListener('click', changeJoinCode);
   $('deleteWorkspaceBtn').addEventListener('click', deleteWorkspace);
-  $('accountBtn').addEventListener('click', () => {
+  $('accountBtn')?.addEventListener('click', () => {
     $('accountName').value = state.user.displayName || state.user.email.split('@')[0];
     $('accountPassword').value = '';
     $('accountModal').classList.remove('hidden');
