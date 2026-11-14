@@ -116,6 +116,11 @@ function switchDashboardSection(section) {
   $('myWorkspacesNavBtn')?.classList.toggle('active', section === 'workspaces');
   $('notificationsNavBtn')?.classList.toggle('active', section === 'notifications');
   $('dashboardPageTitle').textContent = ({ home: 'Dashboard', workspaces: 'Ruang Kerja Saya', notifications: 'Notifikasi' })[section] || 'Dashboard';
+  
+  // PERBAIKAN 1: Pastikan notifikasi di-render saat panel dibuka
+  if (section === 'notifications') {
+    renderDashboardNotifications();
+  }
 }
 
 function renderWorkspaceList(workspaces) {
@@ -237,7 +242,9 @@ async function loadUserWorkspaces() {
     const ids = userSnap.exists() ? (userSnap.data().workspaceIds || []) : [];
     if (!ids.length) {
       dashboardWorkspaces = [];
+      dashboardNotifications = [];
       renderWorkspaceList([]);
+      renderDashboardNotifications();
       return;
     }
     const workspaces = await Promise.all(ids.map(async id => {
@@ -254,11 +261,53 @@ async function loadUserWorkspaces() {
       return { id, ...wsSnap.data(), role: member.role || 'worker', workerName: member.name, tasks, stats: summarizeTasks(tasks, member.role || 'worker', member.name) };
     }));
     dashboardWorkspaces = workspaces.filter(Boolean);
+    
+    // Build notifications from loaded workspaces
+    dashboardNotifications = [];
+    dashboardWorkspaces.forEach(ws => (ws.tasks || []).forEach(task => {
+      const relevant = ws.role === 'mentor' || task.assignee === ws.workerName;
+      if (!relevant) return;
+      if (needsAction(task, ws.role, ws.workerName)) dashboardNotifications.push({ ...task, workspaceId: ws.id, workspaceName: ws.name, kind: 'action', role: ws.role });
+      if (task.status === 'done') dashboardNotifications.push({ ...task, workspaceId: ws.id, workspaceName: ws.name, kind: 'done', role: ws.role });
+    }));
+    dashboardNotifications.sort((a, b) => (a.kind === b.kind ? String(b.endDate || '').localeCompare(String(a.endDate || '')) : a.kind === 'action' ? -1 : 1));
+
     renderWorkspaceList(dashboardWorkspaces);
+    renderDashboardNotifications();
   } catch (err) {
     console.error(err);
     if (list) list.innerHTML = `<p class="empty-hint">Gagal memuat: ${escapeHtml(err.message)}</p>`;
   }
+}
+
+// PERBAIKAN 1: Logika render notifikasi yang lebih robust
+function renderDashboardNotifications() {
+  const list = $('dashboardNotificationsList');
+  if (!list) return;
+
+  // Jika data belum dimuat sama sekali (masih null/undefined), tampilkan loading
+  if (dashboardNotifications === null) {
+    list.innerHTML = '<p class="empty-hint">Memuat notifikasi...</p>';
+    return;
+  }
+
+  // Jika data sudah dimuat tapi kosong
+  if (dashboardNotifications.length === 0) {
+    list.innerHTML = '<p class="empty-hint">Belum ada notifikasi. Aktivitas tugas akan muncul di sini.</p>';
+    return;
+  }
+
+  // Render daftar notifikasi
+  list.innerHTML = dashboardNotifications.map(item => `
+    <article class="dashboard-notification-item">
+      <span class="notification-status-dot ${item.kind === 'done' ? 'is-done' : 'is-action'}"></span>
+      <div class="dashboard-notification-copy">
+        <strong>${escapeHtml(item.title || 'Tugas tanpa judul')}</strong>
+        <p>${escapeHtml(item.workspaceName)} · ${item.kind === 'done' ? 'Tugas selesai' : (item.role === 'mentor' ? 'Menunggu penilaian' : 'Perlu tindakan')}</p>
+      </div>
+      <span class="notification-kind ${item.kind}">${item.kind === 'done' ? 'Selesai' : 'Perlu tindakan'}</span>
+    </article>
+  `).join('');
 }
 
 async function handleCreateWorkspace(e) {
@@ -457,13 +506,12 @@ function renderTasks() {
   tbody.innerHTML = filteredTasks.map(task => {
     const isOverdue = task.endDate && new Date(task.endDate + 'T23:59:59') < new Date() && task.status !== 'done';
     
-    let statusKey = task.status;
     let statusText = 'Belum Mulai';
     let statusClass = 's-todo';
     
+    // PERBAIKAN 5: Logika status Revisi menggunakan kelas s-review (yang sekarang berwarna merah di CSS)
     if (task.status === 'progress') {
       if (task.revisionNotes) {
-        statusKey = 'review';
         statusText = 'Revisi';
         statusClass = 's-review';
       } else {
@@ -485,6 +533,7 @@ function renderTasks() {
         <td><div style="font-weight:600; font-size:0.9rem;">${escapeHtml(task.title)}</div></td>
         <td class="task-desc-cell"><div class="task-desc" title="${escapeHtml(task.desc || '')}">${escapeHtml(shortDesc)}</div></td>
         <td style="font-size:0.85rem; color:#4b5563;">${escapeHtml(task.assignee)}</td>
+        <!-- PERBAIKAN 2: Memastikan kelas col-center diterapkan -->
         <td class="col-center">
           <span class="stat-pill diff-${(task.difficulty || 'sedang').toLowerCase()}">${(task.difficulty || 'Sedang').charAt(0).toUpperCase() + (task.difficulty || 'sedang').slice(1)}</span>
         </td>
@@ -520,10 +569,11 @@ window.openTaskDetailModal = (taskId) => {
   $('detailTaskDifficulty').className = `stat-pill diff-${diff}`;
   $('detailTaskDifficulty').textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
 
+  // PERBAIKAN 4: Tautan Google Drive diubah menjadi bentuk Button yang elegan
   const driveHref = safeUrl(task.reportFileLink || (task.driveSource === 'workspace' ? state.driveLink : ''));
   $('detailTaskDrive').innerHTML = driveHref 
-    ? `<a href="${escapeHtml(driveHref)}" target="_blank" style="color:var(--primary);text-decoration:underline;">🔗 Buka Tautan Drive</a>` 
-    : '<span style="color:var(--text-faint);">Belum ada tautan</span>';
+    ? `<a href="${escapeHtml(driveHref)}" target="_blank" rel="noopener noreferrer" class="btn-drive-modal">🔗 Buka Tautan Drive</a>` 
+    : '<span style="color:var(--text-faint); font-size: 0.85rem;">Belum ada tautan</span>';
 
   const revBox = $('detailRevisionBox');
   if (task.revisionNotes) {
@@ -546,6 +596,7 @@ window.openTaskDetailModal = (taskId) => {
     histList.innerHTML = '<p class="empty-hint">Belum ada riwayat.</p>';
   }
 
+  // PERBAIKAN 3: Container tombol aksi akan diatur oleh CSS #detailActionButtons (justify-content: space-between)
   const actionContainer = $('detailActionButtons');
   actionContainer.innerHTML = '';
   
@@ -558,15 +609,19 @@ window.openTaskDetailModal = (taskId) => {
     actionContainer.innerHTML = `<button class="btn-sm" onclick="openReportModalFromDetail('${task.id}')">📤 Kirim Laporan</button>`;
   } else if (isMentor && task.status === 'review') {
     actionContainer.innerHTML = `
-      <button class="btn-sm btn-success" onclick="openReviewModalFromDetail('${task.id}')">✅ Validasi Selesai</button>
-      <button class="btn-sm btn-warning" onclick="openReviewModalFromDetail('${task.id}', true)">↩ Minta Revisi</button>
+      <div style="display:flex; gap:0.75rem;">
+        <button class="btn-sm btn-warning" onclick="openReviewModalFromDetail('${task.id}', true)">↩ Minta Revisi</button>
+        <button class="btn-sm btn-success" onclick="openReviewModalFromDetail('${task.id}')">✅ Validasi Selesai</button>
+      </div>
     `;
   } else if (isMentor && task.status === 'done') {
     actionContainer.innerHTML = `<button class="btn-sm btn-warning" onclick="moveTask('${task.id}','review'); closeTaskDetailModal()">↩ Buka Kembali untuk Revisi</button>`;
   } else if (isMentor) {
     actionContainer.innerHTML = `
-      <button class="btn-sm btn-ghost" onclick="openEditTaskModal('${task.id}'); closeTaskDetailModal()">✏️ Edit Tugas</button>
-      <button class="btn-sm btn-warning" onclick="deleteTask('${task.id}'); closeTaskDetailModal()">🗑 Hapus</button>
+      <div style="display:flex; gap:0.75rem;">
+        <button class="btn-sm btn-ghost" onclick="openEditTaskModal('${task.id}'); closeTaskDetailModal()">✏️ Edit Tugas</button>
+        <button class="btn-sm btn-warning" onclick="deleteTask('${task.id}'); closeTaskDetailModal()">🗑 Hapus</button>
+      </div>
     `;
   }
 
