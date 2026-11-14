@@ -352,7 +352,7 @@
         <div class="form-group"><label for="newWorkspaceName">Nama Ruang Kerja</label><input type="text" id="newWorkspaceName" required /></div>
         <div class="form-group"><label for="newWorkspaceCode">Kode Undangan (6 karakter)</label><input type="text" id="newWorkspaceCode" maxlength="6" pattern="[A-Za-z0-9]{6}" required /></div>
         <div class="form-group"><label for="newWorkspaceDrive">Tautan Folder Google Drive (opsional)</label><input type="url" id="newWorkspaceDrive" placeholder="https://drive.google.com/..." /></div>
-        <button type="submit" class="btn-primary">Buat Ruang Kerja</button>
+        <button type="submit" id="createWorkspaceSubmitBtn" class="btn-primary">Buat Ruang Kerja</button>
       </form>
     </div>
   </div>
@@ -363,20 +363,37 @@
       <h2 style="margin-bottom:0.5rem;">Gabung Ruang Kerja</h2>
       <form id="joinWorkspaceForm">
         <div class="form-group"><label for="joinCodeInput">Kode Undangan (6 karakter)</label><input type="text" id="joinCodeInput" maxlength="6" required /></div>
-        <button type="submit" class="btn-primary">Gabung Ruang Kerja</button>
+        <button type="submit" id="joinWorkspaceSubmitBtn" class="btn-primary">Gabung Ruang Kerja</button>
       </form>
     </div>
   </div>
 
+  <!-- ACCOUNT MODAL DENGAN FITUR DARK MODE -->
   <div id="accountModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-modal" data-close="accountModal">×</button>
       <h2 style="margin-bottom:0.5rem;">Pengaturan Akun</h2>
+      <p class="subtitle">Kelola profil dan preferensi tampilan Anda.</p>
       <form id="accountForm">
         <div class="form-group"><label for="accountName">Nama</label><input type="text" id="accountName" required /></div>
-        <div class="form-group"><label for="accountPassword">Kata Sandi Baru (opsional)</label><input type="password" id="accountPassword" minlength="6" /></div>
-        <button type="submit" class="btn-primary">Simpan</button>
+        <div class="form-group"><label for="accountPassword">Kata Sandi Baru (opsional)</label><input type="password" id="accountPassword" minlength="6" placeholder="Kosongkan jika tidak diubah" /></div>
+        <button type="submit" class="btn-primary">Simpan Perubahan</button>
       </form>
+
+      <!-- FITUR DARK MODE -->
+      <div class="dark-mode-section">
+        <div class="dark-mode-header">
+          <span class="dark-mode-icon">🌙</span>
+          <div>
+            <strong>Mode Gelap</strong>
+            <p>Tampilan gelap yang nyaman untuk mata</p>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
   </div>
 
