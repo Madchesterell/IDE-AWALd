@@ -623,11 +623,18 @@ td {
 }
 
 .workspace-sidebar {
-    width: 240px;
+    width: 260px;
     flex-shrink: 0;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 1.25rem 0.85rem;
+    background: var(--primary); /* ← Diubah menjadi latar biru #2563eb */
+    border-right: 1px solid var(--primary-hover);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    color: #ffffff;
+}
+
+.ws-sidebar-section {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -638,34 +645,39 @@ td {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text-faint);
+    color: rgba(255, 255, 255, 0.75); /* Teks label menu jadi putih transparan */
     padding: 0 0.65rem 0.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 0.25rem;
 }
 
 .ws-nav-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     width: 100%;
     text-align: left;
-    padding: 0.7rem 0.85rem;
-    border: none;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--text-muted);
+    padding: 0.7rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.25); /* Garis tepi tombol tipis */
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.1); /* Tombol transparan lembut */
+    color: #ffffff; /* Teks tombol putih bersih */
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+    font-family: inherit;
 }
 
 .ws-nav-item:hover {
-    background: var(--border-light);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .ws-nav-item.active {
-    background: var(--primary-soft);
-    color: var(--primary);
+    background: rgba(255, 255, 255, 0.25); /* Indikator menu aktif */
+    border-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .workspace-content {
