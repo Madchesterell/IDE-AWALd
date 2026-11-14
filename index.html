@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<!-- ============ 2. DASHBOARD VIEW (Layout Baru ala Gambar 2) ============ -->
+<!-- ============ 2. DASHBOARD VIEW ============ -->
 <div id="dashboardView" class="hidden dashboard-layout">
     <!-- Sidebar Kiri -->
     <aside class="sidebar">
@@ -82,6 +82,7 @@
             <div class="menu-section">
                 <span class="menu-section-title">Ruang Kerja</span>
                 <div class="sidebar-action-buttons">
+                    <!-- ID tombol dikembalikan agar terhubung ke fungsi script.js -->
                     <button type="button" id="createWorkspaceBtn" class="btn-sidebar-action">+ Buat Ruang Kerja</button>
                     <button type="button" id="joinWorkspaceBtn" class="btn-sidebar-action secondary">Gabung Ruang Kerja</button>
                 </div>
@@ -97,10 +98,11 @@
         <header class="dashboard-topbar">
             <h2 class="topbar-title">WorkSpace</h2>
             <div class="user-profile-badge">
-                <span class="avatar-circle">FA</span>
+                <span class="avatar-circle" id="userAvatarInitials">FA</span>
                 <div class="user-info-text">
-                    <span class="user-name">Farrel Abyantara</span>
-                    <span class="user-role">Admin / Member</span>
+                    <!-- Elemen ID untuk menampilkan email / nama akun pengguna aktif -->
+                    <span class="user-name" id="userEmailDisplay">Pengguna</span>
+                    <span class="user-role">Online Member</span>
                 </div>
             </div>
         </header>
@@ -108,7 +110,7 @@
         <main class="dashboard-content">
             <!-- Alert Selamat Datang -->
             <div class="welcome-alert">
-                <span>✅ Selamat datang kembali, Farrel Abyantara!</span>
+                <span>✅ Selamat datang kembali, Sinuhun!</span>
             </div>
 
             <div class="section-header-title" style="margin-bottom: 1rem;">
@@ -116,6 +118,7 @@
                 <p class="subtitle" style="margin:0;">Pilih workspace untuk masuk, atau buat/gabung yang baru.</p>
             </div>
 
+            <!-- Kontainer daftar workspace yang di-render oleh script.js -->
             <div id="workspaceList" class="workspace-grid">
                 <p class="empty-hint">Memuat workspace...</p>
             </div>
@@ -123,7 +126,7 @@
     </div>
 </div>
 
-<!-- ============ 3. WORKSPACE VIEW (Ruang Kerja Aktif) ============ -->
+<!-- ============ 3. WORKSPACE VIEW ============ -->
 <div id="workspaceView" class="hidden">
     <header class="navbar">
         <div class="brand" style="display: flex; align-items: center; gap: 10px;">
