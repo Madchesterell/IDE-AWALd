@@ -213,7 +213,6 @@ button, input, select, textarea { font-family: inherit; }
   border-right: 1px solid var(--primary-hover);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   padding: 1.5rem 1rem;
   position: fixed;
   top: 0;
@@ -230,7 +229,13 @@ button, input, select, textarea { font-family: inherit; }
   margin-bottom: 1.75rem;
 }
 .sidebar-brand h3 span { color: #bfdbfe; }
-.sidebar-menu { display: flex; flex-direction: column; gap: 1rem; flex: 1; }
+
+/* Menu utama (Dashboard, Ruang Kerja Saya, Notifikasi) */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 .menu-item {
   display: flex;
   align-items: center;
@@ -264,47 +269,66 @@ button, input, select, textarea { font-family: inherit; }
   font-size: 0.95rem;
   color: #ffffff;
 }
-.sidebar-action-buttons { display: flex; flex-direction: column; gap: .5rem; }
-.btn-sidebar-action {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.65rem 0.9rem;
-  border-radius: var(--radius-sm);
+
+/* Section untuk Pengaturan Akun - tepat di bawah menu navigasi */
+.sidebar-settings-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.menu-item-settings {
   font-size: 0.825rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 42px;
-  transition: background .2s ease, color .2s ease, transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  padding: 0.6rem 1rem;
+  color: rgba(255, 255, 255, 0.9);
 }
-.btn-sidebar-action:hover, .btn-sidebar-action:focus-visible {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.55);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 14px rgba(15,23,42,.14);
-  outline: none;
-}
-.btn-sidebar-action:active { transform: translateY(0) scale(.985); box-shadow: none; }
-.btn-sidebar-action.secondary {
-  background: transparent;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-}
+
+/* Footer sidebar - profil pengguna */
 .sidebar-footer {
+  margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.btn-logout-sidebar {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.65rem 1rem;
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
   border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+}
+.avatar-circle {
+  width: 38px;
+  height: 38px;
+  background: #ffffff;
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
   font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.user-info-text { display: flex; flex-direction: column; min-width: 0; }
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-role { font-size: 0.72rem; color: rgba(255, 255, 255, 0.7); }
+.btn-logout-sidebar {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.825rem;
   font-weight: 600;
   cursor: pointer;
   width: 100%;
@@ -312,15 +336,14 @@ button, input, select, textarea { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  transition: background .2s ease, color .2s ease, transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  transition: background .2s ease, transform .2s ease, border-color .2s ease;
 }
 .btn-logout-sidebar:hover, .btn-logout-sidebar:focus-visible {
   background: rgba(220, 38, 38, 0.85);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 14px rgba(15,23,42,.14);
+  border-color: transparent;
+  transform: translateY(-1px);
   outline: none;
 }
-.btn-logout-sidebar:active { transform: translateY(0) scale(.985); box-shadow: none; }
 
 .main-content-wrapper {
   margin-left: var(--sidebar-width);
@@ -342,22 +365,6 @@ button, input, select, textarea { font-family: inherit; }
   z-index: 40;
 }
 .topbar-title { font-size: 1.2rem; font-weight: 700; color: var(--text); }
-.user-profile-badge { display: flex; align-items: center; gap: 0.75rem; }
-.avatar-circle {
-  width: 38px;
-  height: 38px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-.user-info-text { display: flex; flex-direction: column; }
-.user-name { font-size: 0.875rem; font-weight: 600; color: var(--text); }
-.user-role { font-size: 0.75rem; color: var(--text-muted); }
 .dashboard-content { padding: 1.75rem 2rem; flex: 1; max-width: 1200px; width: 100%; }
 .card {
   background: var(--surface);
@@ -377,7 +384,68 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 500;
   margin-bottom: 1.75rem;
 }
-.workspace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+
+/* =========================================
+   TOMBOL AKSI - Buat & Gabung Ruang Kerja
+   (Dipindahkan ke halaman Ruang Kerja Saya)
+========================================= */
+.workspace-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px dashed var(--border);
+}
+.btn-workspace-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-workspace-action .btn-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.btn-workspace-action.primary {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+}
+.btn-workspace-action.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+.btn-workspace-action.secondary {
+  background: var(--surface);
+  color: var(--primary);
+  border-color: var(--primary-border);
+}
+.btn-workspace-action.secondary:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+/* =========================================
+   KARTU RUANG KERJA - Versi Baru (Ringkas)
+========================================= */
+.workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
 .workspace-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -385,34 +453,76 @@ button, input, select, textarea { font-family: inherit; }
   padding: 1.25rem;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  transition: transform var(--transition);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 .workspace-card:hover {
   transform: translateY(-3px);
   border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
 .workspace-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+.workspace-card-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .role-badge {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 .role-badge.mentor { background: #dbeafe; color: #1e40af; }
 .role-badge.worker { background: #dcfce7; color: #166534; }
-.join-code {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--border);
+
+/* Stats pills - indikator status tugas */
+.workspace-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
 }
-.join-code strong { font-family: monospace; color: var(--primary); letter-spacing: 1px; }
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.stat-pill .stat-num {
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.stat-pill.s-action { background: #fef3c7; color: #92400e; }
+.stat-pill.s-todo { background: var(--border-light); color: var(--text-muted); }
+.stat-pill.s-progress { background: #dbeafe; color: #1e40af; }
+.stat-pill.s-review { background: #f3e8ff; color: #6b21a8; }
+.stat-pill.s-done { background: #dcfce7; color: #15803d; }
+.stat-pill.s-late { background: #fee2e2; color: #991b1b; }
+
 .empty-hint { color: var(--text-muted); font-style: italic; font-size: 0.85rem; }
 
 table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -586,11 +696,7 @@ td { padding: 14px 16px; border-bottom: 1px solid var(--border-light); font-size
 .btn-sm.btn-ghost { background: var(--border-light); color: var(--text); border: 1px solid var(--border); }
 .btn-sm.btn-ghost:hover { background: var(--border); }
 
-.badge-capacity, .badge-live { font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.7rem; border-radius: 999px; }
-.badge-capacity { background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-border); }
-.badge-live { background: var(--border-light); color: var(--text-muted); }
 .role-controls { font-size: 0.8rem; }
-.worker-tag { list-style: none; display: inline-block; background: var(--primary-soft); color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.78rem; margin: 0 0.3rem 0.3rem 0; }
 .status-text { display: block; margin-top: 0.4rem; font-size: 0.78rem; color: var(--text-muted); }
 .status-text.linked { color: var(--success); }
 .review-report-box { background: var(--border-light); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 0.9rem; font-size: 0.85rem; margin-bottom: 1rem; word-break: break-word; }
@@ -623,7 +729,6 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.4);
 }
-.ws-back-btn.danger:hover { background: rgba(220, 38, 38, 0.85); border-color: transparent; }
 
 .task-title { font-weight: 600; font-size: 0.92rem; color: var(--text); }
 .task-desc-cell { min-width: 200px; max-width: 300px; }
@@ -659,8 +764,6 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 #taskTable th.col-center, #taskTable td.col-center { text-align: center; }
 #taskTable th.col-right, #taskTable td.col-right { text-align: right; }
-#taskTable th.col-center { text-indent: 0.05em; }
-#taskTable th.col-right { padding-right: calc(16px - 0.05em) !important; }
 #memberSettingsTable th.col-center, #memberSettingsTable td.col-center { text-align: center; }
 
 .task-toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 0.9rem 1rem; }
@@ -674,22 +777,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .tag-soon { display: inline-block; margin-left: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 999px; }
 
 .ws-sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; }
-.ws-settings-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-.btn-danger-soft { color: var(--danger); border-color: var(--danger-border); background: var(--danger-bg); }
 .code-chip { font-family: monospace; letter-spacing: 2px; color: var(--primary); }
-
-.ws-stats { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
-.stat { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--border-light); color: var(--text-muted); }
-.stat.s-progress { background: #dbeafe; color: #1e40af; }
-.stat.s-review { background: #f3e8ff; color: #6b21a8; }
-.stat.s-done { background: #dcfce7; color: #15803d; }
-.stat.s-late { background: #fee2e2; color: #991b1b; }
-
-.ws-members-progress { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }
-.mini-progress { display: grid; grid-template-columns: 90px 1fr 36px; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-muted); }
-.mini-progress span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mini-progress .bar { height: 6px; background: var(--border-light); border-radius: 999px; overflow: hidden; }
-.mini-progress .bar i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
 
 .hist-item { border-left: 3px solid var(--border); padding: 0.4rem 0 0.4rem 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem; word-break: break-word; }
 .hist-item.hist-laporan { border-color: var(--primary); }
@@ -789,6 +877,8 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   .workspace-sidebar { width: 100%; padding: 1rem; position: static; height: auto; align-self: stretch; }
   .navbar { flex-wrap: wrap; gap: 0.5rem; }
   .form-row, .grid-2-col { grid-template-columns: 1fr; }
+  .workspace-action-bar { flex-direction: column; }
+  .btn-workspace-action { width: 100%; justify-content: center; }
 }
 @media (max-width: 640px) {
   .daily-goal-form { flex-direction: column; align-items: stretch; }
