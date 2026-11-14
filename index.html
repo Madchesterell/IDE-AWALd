@@ -78,6 +78,8 @@
       <div class="sidebar-brand">
         <h3>WorkSpace<span>Pro</span></h3>
       </div>
+
+      <!-- NAVIGASI UTAMA -->
       <nav class="sidebar-menu">
         <button id="dashboardNavBtn" class="menu-item active"><span class="menu-icon">▦</span> Dashboard</button>
         <button id="myWorkspacesNavBtn" class="menu-item"><span class="menu-icon">▣</span> Ruang Kerja Saya</button>
@@ -86,19 +88,23 @@
           <span id="dashboardNotificationBadge" class="sidebar-notification-badge hidden">0</span>
         </button>
       </nav>
-      <div class="sidebar-action-buttons">
-        <button id="createWorkspaceBtn" class="btn-sidebar-action">＋ Buat Ruang Kerja</button>
-        <button id="joinWorkspaceBtn" class="btn-sidebar-action secondary">↗ Gabung Ruang Kerja</button>
+
+      <!-- PENGATURAN AKUN - Tepat di bawah navigasi -->
+      <div class="sidebar-settings-section">
+        <button id="accountBtn" class="menu-item menu-item-settings">
+          <span class="menu-icon">⚙</span> Pengaturan Akun
+        </button>
       </div>
+
+      <!-- FOOTER SIDEBAR - Profil Pengguna -->
       <div class="sidebar-footer">
-        <div class="user-profile-badge" style="margin-bottom:0.75rem;">
+        <div class="user-profile-badge">
           <div class="avatar-circle" id="userAvatarInitials">WP</div>
           <div class="user-info-text">
             <span class="user-name" id="userEmailDisplay">Pengguna</span>
             <span class="user-role">Anggota</span>
           </div>
         </div>
-        <button id="accountBtn" class="btn-sidebar-action secondary">⚙ Pengaturan Akun</button>
         <button id="logoutBtn" class="btn-logout-sidebar">⎋ Keluar</button>
       </div>
     </aside>
@@ -139,13 +145,24 @@
           </div>
         </section>
 
-        <!-- WORKSPACES PANEL -->
+        <!-- WORKSPACES PANEL - Tombol Buat & Gabung dipindahkan ke sini -->
         <section id="myWorkspacesPanel" class="dashboard-panel hidden">
           <div class="card">
             <div class="section-header-title">
               <h3>Ruang Kerja Saya</h3>
               <p class="subtitle">Pilih ruang kerja yang ingin dibuka, atau buat dan gabung ruang kerja baru.</p>
             </div>
+
+            <!-- Tombol Aksi - Dipindahkan dari sidebar -->
+            <div class="workspace-action-bar">
+              <button id="createWorkspaceBtn" class="btn-workspace-action primary">
+                <span class="btn-icon">＋</span> Buat Ruang Kerja
+              </button>
+              <button id="joinWorkspaceBtn" class="btn-workspace-action secondary">
+                <span class="btn-icon">↗</span> Gabung Ruang Kerja
+              </button>
+            </div>
+
             <div id="workspaceList">
               <p class="empty-hint">Memuat daftar ruang kerja...</p>
             </div>
