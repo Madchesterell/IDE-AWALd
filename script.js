@@ -556,10 +556,10 @@ function renderTasks() {
           <div>${escapeHtml(task.assignee)}</div>
           <div style="font-size: 0.75rem; color: #9ca3af;">(Anggota Tim)</div>
         </td>
-        <td style="padding: 14px 16px;">
+        <td class="col-center" style="padding: 14px 16px;">
           <span style="background: ${diffBg}; color: ${diffColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${diffText}</span>
         </td>
-        <td style="padding: 14px 16px;">
+        <td class="col-center" style="padding: 14px 16px;">
           <span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">${statusText}</span>
         </td>
         <td style="padding: 14px 16px; font-size: 0.85rem; color: ${isOverdue ? '#dc2626' : '#4b5563'}; font-weight: ${isOverdue ? '600' : '400'};">
@@ -570,7 +570,7 @@ function renderTasks() {
             ? `<a class="btn-drive" href="${escapeHtml(driveHref)}" target="_blank" rel="noopener noreferrer">${driveIcon}Buka Drive</a>`
             : '<span style="font-size: 0.75rem; color: #9ca3af;">-</span>'}
         </td>
-        <td style="padding: 14px 16px; text-align: right;">
+        <td class="col-right" style="padding: 14px 16px;">
           <div style="display: flex; justify-content: flex-end; gap: 6px;">
             ${canStart ? `<button class="btn-sm" style="font-size: 0.75rem; padding: 4px 10px;" onclick="moveTask('${task.id}','progress')">▶ Mulai</button>` : ''}
             ${canReport ? `<button class="btn-sm" style="font-size: 0.75rem; padding: 4px 10px;" onclick="openReportModal('${task.id}')">📤 Lapor</button>` : ''}
@@ -630,9 +630,9 @@ function renderDivisionManagement() {
       <tr style="border-bottom: 1px solid #f3f4f6;">
         <td style="padding: 10px; font-weight: 500;">${escapeHtml(m.name)}</td>
         <td style="padding: 10px; color: #6b7280; font-size: 0.85rem;">${escapeHtml(m.email)}</td>
-        <td style="padding: 10px;"><span class="role-badge ${m.role}">${m.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></td>
+        <td class="col-center" style="padding: 10px;"><span class="role-badge ${m.role}">${m.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></td>
         <td style="padding: 10px; font-size: 0.85rem;">${escapeHtml(m.division || 'Umum')}</td>
-        <td style="padding: 10px;"><button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button></td>
+        <td class="col-center" style="padding: 10px;"><button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button></td>
       </tr>`).join('');
   }
 }
