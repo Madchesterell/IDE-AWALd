@@ -916,3 +916,21 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     border-color: var(--primary);
     color: #ffffff;
 }
+
+/* =========================================
+   Perataan kolom tabel tugas
+   ========================================= */
+#taskTable th.col-center,
+#taskTable td.col-center { text-align: center; }
+
+#taskTable th.col-right,
+#taskTable td.col-right { text-align: right; }
+
+/* header memakai letter-spacing 0.05em; spasi di huruf terakhir dikompensasi
+   agar teks header benar-benar pas di tengah / rata kanan */
+#taskTable th.col-center { text-indent: 0.05em; }
+#taskTable th.col-right { padding-right: calc(16px - 0.05em) !important; }
+
+/* Tabel Pengaturan Anggota: kolom Peran & Aksi rata tengah */
+#memberSettingsTable th.col-center,
+#memberSettingsTable td.col-center { text-align: center; }
