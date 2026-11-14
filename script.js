@@ -86,6 +86,26 @@ function localDate(d = new Date()) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+/* =========================================
+   DARK MODE — Fitur Baru
+========================================= */
+function initDarkMode() {
+  const saved = localStorage.getItem('darkMode');
+  const isDark = saved === 'true';
+  if (isDark) {
+    document.body.classList.add('dark-mode');
+  }
+  const toggle = $('darkModeToggle');
+  if (toggle) {
+    toggle.checked = isDark;
+    toggle.addEventListener('change', (e) => {
+      const enabled = e.target.checked;
+      document.body.classList.toggle('dark-mode', enabled);
+      localStorage.setItem('darkMode', enabled ? 'true' : 'false');
+    });
+  }
+}
+
 function showAuthView() {
   $('authView').classList.remove('hidden');
   $('dashboardView').classList.add('hidden');
@@ -117,7 +137,6 @@ function switchDashboardSection(section) {
   $('notificationsNavBtn')?.classList.toggle('active', section === 'notifications');
   $('dashboardPageTitle').textContent = ({ home: 'Dashboard', workspaces: 'Ruang Kerja Saya', notifications: 'Notifikasi' })[section] || 'Dashboard';
   
-  // PERBAIKAN 1: Pastikan notifikasi di-render saat panel dibuka
   if (section === 'notifications') {
     renderDashboardNotifications();
   }
@@ -262,7 +281,6 @@ async function loadUserWorkspaces() {
     }));
     dashboardWorkspaces = workspaces.filter(Boolean);
     
-    // Build notifications from loaded workspaces
     dashboardNotifications = [];
     dashboardWorkspaces.forEach(ws => (ws.tasks || []).forEach(task => {
       const relevant = ws.role === 'mentor' || task.assignee === ws.workerName;
@@ -280,24 +298,15 @@ async function loadUserWorkspaces() {
   }
 }
 
-// PERBAIKAN 1: Logika render notifikasi yang lebih robust
 function renderDashboardNotifications() {
   const list = $('dashboardNotificationsList');
   if (!list) return;
 
-  // Jika data belum dimuat sama sekali (masih null/undefined), tampilkan loading
-  if (dashboardNotifications === null) {
-    list.innerHTML = '<p class="empty-hint">Memuat notifikasi...</p>';
-    return;
-  }
-
-  // Jika data sudah dimuat tapi kosong
-  if (dashboardNotifications.length === 0) {
+  if (!dashboardNotifications || dashboardNotifications.length === 0) {
     list.innerHTML = '<p class="empty-hint">Belum ada notifikasi. Aktivitas tugas akan muncul di sini.</p>';
     return;
   }
 
-  // Render daftar notifikasi
   list.innerHTML = dashboardNotifications.map(item => `
     <article class="dashboard-notification-item">
       <span class="notification-status-dot ${item.kind === 'done' ? 'is-done' : 'is-action'}"></span>
@@ -509,7 +518,6 @@ function renderTasks() {
     let statusText = 'Belum Mulai';
     let statusClass = 's-todo';
     
-    // PERBAIKAN 5: Logika status Revisi menggunakan kelas s-review (yang sekarang berwarna merah di CSS)
     if (task.status === 'progress') {
       if (task.revisionNotes) {
         statusText = 'Revisi';
@@ -533,7 +541,6 @@ function renderTasks() {
         <td><div style="font-weight:600; font-size:0.9rem;">${escapeHtml(task.title)}</div></td>
         <td class="task-desc-cell"><div class="task-desc" title="${escapeHtml(task.desc || '')}">${escapeHtml(shortDesc)}</div></td>
         <td style="font-size:0.85rem; color:#4b5563;">${escapeHtml(task.assignee)}</td>
-        <!-- PERBAIKAN 2: Memastikan kelas col-center diterapkan -->
         <td class="col-center">
           <span class="stat-pill diff-${(task.difficulty || 'sedang').toLowerCase()}">${(task.difficulty || 'Sedang').charAt(0).toUpperCase() + (task.difficulty || 'sedang').slice(1)}</span>
         </td>
@@ -547,6 +554,10 @@ function renderTasks() {
   }).join('');
 }
 
+/* =========================================
+   PERBAIKAN 1: Modal Detail Tugas dengan Tombol Aksi yang Berfungsi
+   Semua fungsi global dipasang di window agar bisa diakses dari onclick
+========================================= */
 window.openTaskDetailModal = (taskId) => {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
@@ -569,7 +580,6 @@ window.openTaskDetailModal = (taskId) => {
   $('detailTaskDifficulty').className = `stat-pill diff-${diff}`;
   $('detailTaskDifficulty').textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
 
-  // PERBAIKAN 4: Tautan Google Drive diubah menjadi bentuk Button yang elegan
   const driveHref = safeUrl(task.reportFileLink || (task.driveSource === 'workspace' ? state.driveLink : ''));
   $('detailTaskDrive').innerHTML = driveHref 
     ? `<a href="${escapeHtml(driveHref)}" target="_blank" rel="noopener noreferrer" class="btn-drive-modal">🔗 Buka Tautan Drive</a>` 
@@ -596,7 +606,7 @@ window.openTaskDetailModal = (taskId) => {
     histList.innerHTML = '<p class="empty-hint">Belum ada riwayat.</p>';
   }
 
-  // PERBAIKAN 3: Container tombol aksi akan diatur oleh CSS #detailActionButtons (justify-content: space-between)
+  // Render tombol aksi berdasarkan role dan status tugas
   const actionContainer = $('detailActionButtons');
   actionContainer.innerHTML = '';
   
@@ -604,23 +614,33 @@ window.openTaskDetailModal = (taskId) => {
   const isMentor = state.role === 'mentor';
 
   if (isWorker && task.status === 'todo') {
-    actionContainer.innerHTML = `<button class="btn-sm" onclick="moveTask('${task.id}','progress'); closeTaskDetailModal()">▶ Mulai Dikerjakan</button>`;
+    actionContainer.innerHTML = `
+      <button class="btn-sm" onclick="window.moveTask('${task.id}','progress'); window.closeTaskDetailModal()">▶ Mulai Dikerjakan</button>
+    `;
   } else if (isWorker && task.status === 'progress') {
-    actionContainer.innerHTML = `<button class="btn-sm" onclick="openReportModalFromDetail('${task.id}')">📤 Kirim Laporan</button>`;
+    actionContainer.innerHTML = `
+      <button class="btn-sm" onclick="window.openReportModalFromDetail('${task.id}')">📤 Kirim Laporan</button>
+    `;
   } else if (isMentor && task.status === 'review') {
     actionContainer.innerHTML = `
-      <div style="display:flex; gap:0.75rem;">
-        <button class="btn-sm btn-warning" onclick="openReviewModalFromDetail('${task.id}', true)">↩ Minta Revisi</button>
-        <button class="btn-sm btn-success" onclick="openReviewModalFromDetail('${task.id}')">✅ Validasi Selesai</button>
+      <div class="action-group">
+        <button class="btn-sm btn-warning" onclick="window.openReviewModalFromDetail('${task.id}', true)">↩ Minta Revisi</button>
+        <button class="btn-sm btn-success" onclick="window.openReviewModalFromDetail('${task.id}', false)">✅ Validasi Selesai</button>
       </div>
     `;
   } else if (isMentor && task.status === 'done') {
-    actionContainer.innerHTML = `<button class="btn-sm btn-warning" onclick="moveTask('${task.id}','review'); closeTaskDetailModal()">↩ Buka Kembali untuk Revisi</button>`;
+    actionContainer.innerHTML = `
+      <div class="action-group">
+        <button class="btn-sm btn-ghost" onclick="window.openEditTaskModal('${task.id}'); window.closeTaskDetailModal()">✏️ Edit</button>
+        <button class="btn-sm btn-warning" onclick="window.moveTask('${task.id}','review'); window.closeTaskDetailModal()">↩ Buka Kembali</button>
+        <button class="btn-sm btn-warning" onclick="window.deleteTask('${task.id}'); window.closeTaskDetailModal()">🗑 Hapus</button>
+      </div>
+    `;
   } else if (isMentor) {
     actionContainer.innerHTML = `
-      <div style="display:flex; gap:0.75rem;">
-        <button class="btn-sm btn-ghost" onclick="openEditTaskModal('${task.id}'); closeTaskDetailModal()">✏️ Edit Tugas</button>
-        <button class="btn-sm btn-warning" onclick="deleteTask('${task.id}'); closeTaskDetailModal()">🗑 Hapus</button>
+      <div class="action-group">
+        <button class="btn-sm btn-ghost" onclick="window.openEditTaskModal('${task.id}'); window.closeTaskDetailModal()">✏️ Edit Tugas</button>
+        <button class="btn-sm btn-warning" onclick="window.deleteTask('${task.id}'); window.closeTaskDetailModal()">🗑 Hapus</button>
       </div>
     `;
   }
@@ -628,21 +648,96 @@ window.openTaskDetailModal = (taskId) => {
   $('taskDetailModal').classList.remove('hidden');
 };
 
+// Fungsi global untuk menutup modal
 window.closeTaskDetailModal = () => {
   $('taskDetailModal').classList.add('hidden');
 };
 
+// Fungsi global untuk membuka modal laporan dari detail
 window.openReportModalFromDetail = (taskId) => {
-  closeTaskDetailModal();
-  window.openReportModal(taskId);
+  window.closeTaskDetailModal();
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  
+  const link = prompt("Masukkan tautan Google Drive bukti pekerjaan:");
+  if (link === null) return;
+  if (!safeUrl(link)) return alert('Tautan harus diawali http:// atau https://');
+  
+  const notes = prompt("Catatan progres (opsional):") || '';
+  
+  updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
+    status: 'review',
+    reportFileLink: link,
+    reportNotes: notes,
+    history: arrayUnion({ type: 'laporan', by: state.workerName, text: notes, link: link, at: Date.now() }),
+    revisionNotes: '',
+    updatedAt: serverTimestamp()
+  }).then(() => alert('✅ Laporan terkirim ke Mentor!'));
 };
 
-window.openReviewModalFromDetail = (taskId, isRevision = false) => {
-  closeTaskDetailModal();
-  window.openReviewModal(taskId);
+// Fungsi global untuk membuka modal review dari detail
+window.openReviewModalFromDetail = (taskId, isRevision) => {
+  window.closeTaskDetailModal();
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  
   if (isRevision) {
-    setTimeout(() => $('mentorReviewNotes')?.focus(), 100);
+    const notes = prompt("Masukkan catatan revisi untuk pekerja:");
+    if (notes === null) return;
+    if (!notes.trim()) return alert('Catatan revisi wajib diisi.');
+    
+    updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
+      status: 'progress',
+      revisionNotes: notes,
+      history: arrayUnion({ type: 'revisi', by: state.workerName, text: notes, at: Date.now() }),
+      updatedAt: serverTimestamp()
+    }).then(() => alert('↩ Catatan revisi dikirimkan ke pekerja!'));
+  } else {
+    const notes = prompt("Catatan validasi (opsional, kosongkan jika sempurna):") || '';
+    
+    updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
+      status: 'done',
+      revisionNotes: '',
+      history: arrayUnion({ type: 'selesai', by: state.workerName, text: notes, at: Date.now() }),
+      updatedAt: serverTimestamp()
+    }).then(() => alert('✅ Tugas divalidasi selesai!'));
   }
+};
+
+// Fungsi global untuk memindahkan status tugas
+window.moveTask = async (taskId, newStatus) => {
+  const t = state.tasks.find(x => x.id === taskId);
+  if (!t) return;
+  const ok = (state.role === 'worker' && t.assignee === state.workerName && t.status === 'todo' && newStatus === 'progress')
+    || (state.role === 'mentor' && t.status === 'done' && newStatus === 'review');
+  if (!ok) return alert('Perubahan status ini tidak diizinkan.');
+  try {
+    await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), { status: newStatus, updatedAt: serverTimestamp() });
+  } catch (err) { alert('Gagal: ' + err.message); }
+};
+
+// Fungsi global untuk menghapus tugas
+window.deleteTask = async (id) => {
+  if (state.role !== 'mentor' || !confirm('Hapus tugas ini? Tindakan tidak bisa dibatalkan.')) return;
+  try { await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', id)); }
+  catch (err) { alert('Gagal: ' + err.message); }
+};
+
+// Fungsi global untuk membuka modal edit tugas
+window.openEditTaskModal = (id) => {
+  const t = state.tasks.find(x => x.id === id);
+  if (!t) return;
+  // Buat modal edit sederhana menggunakan prompt untuk konsistensi
+  const newTitle = prompt("Judul tugas:", t.title);
+  if (newTitle === null) return;
+  const newDesc = prompt("Deskripsi:", t.desc || '');
+  if (newDesc === null) return;
+  
+  updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', id), {
+    title: newTitle.trim(),
+    desc: newDesc.trim(),
+    updatedAt: serverTimestamp()
+  }).then(() => alert('✅ Tugas diperbarui!'));
 };
 
 function loadDailyGoal() {
@@ -689,8 +784,10 @@ function renderDivisionManagement() {
         <td class="col-center" style="padding:10px;"><span class="role-badge ${m.role}">${m.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></td>
         <td class="col-divisi" style="padding:10px;">${escapeHtml(m.division || 'Umum')}</td>
         <td class="col-center" style="padding:10px;">
-          <button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button>
-          ${m.id !== state.user.uid ? `<button class="btn-sm btn-warning" onclick="removeMember('${m.id}')">Keluarkan</button>` : ''}
+          <div style="display:inline-flex; flex-direction:row; gap:0.5rem; align-items:center; justify-content:center; flex-wrap:nowrap;">
+            <button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button>
+            ${m.id !== state.user.uid ? `<button class="btn-sm btn-warning" onclick="removeMember('${m.id}')">Keluarkan</button>` : ''}
+          </div>
         </td>
       </tr>`).join('');
   }
@@ -717,12 +814,6 @@ window.openEditMemberModal = (memberId) => {
   $('editMemberRole').value = mem.role;
   $('editMemberDivision').value = mem.division || 'Umum';
   $('editMemberModal').classList.remove('hidden');
-};
-
-window.deleteTask = async (id) => {
-  if (state.role !== 'mentor' || !confirm('Hapus tugas ini?')) return;
-  try { await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', id)); }
-  catch (err) { alert('Gagal: ' + err.message); }
 };
 
 window.removeMember = async (memberId) => {
@@ -794,56 +885,6 @@ async function renameUser(newName, oldName) {
   state.user = auth.currentUser;
   $('topbarUserName').textContent = newName;
 }
-
-window.moveTask = async (taskId, newStatus) => {
-  const t = state.tasks.find(x => x.id === taskId);
-  if (!t) return;
-  const ok = (state.role === 'worker' && t.assignee === state.workerName && t.status === 'todo' && newStatus === 'progress')
-    || (state.role === 'mentor' && t.status === 'done' && newStatus === 'review');
-  if (!ok) return alert('Perubahan status ini tidak diizinkan.');
-  try {
-    await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), { status: newStatus, updatedAt: serverTimestamp() });
-  } catch (err) { alert('Gagal: ' + err.message); }
-};
-
-window.openReportModal = (taskId) => {
-  const task = state.tasks.find(t => t.id === taskId);
-  const container = $('reportDriveContainer');
-  const subtitle = $('reportModalSubtitle');
-  
-  $('reportTaskId').value = taskId;
-  subtitle.textContent = "Masukkan tautan Google Drive untuk bukti pekerjaan.";
-  container.innerHTML = `<label for="reportDriveLink">Tautan File Google Drive</label><input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required /><small style="color:var(--text-muted);">Tempelkan tautan file yang sudah diunggah.</small>`;
-  
-  if ($('reportModal')) {
-     $('reportModal').classList.remove('hidden');
-  } else {
-     const link = prompt("Masukkan tautan Google Drive bukti pekerjaan:");
-     if (link && safeUrl(link)) {
-        updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
-          status: 'review', reportFileLink: link, reportNotes: 'Laporan dikirim',
-          history: arrayUnion({ type: 'laporan', by: state.workerName, link: link, at: Date.now() }),
-          updatedAt: serverTimestamp()
-        }).then(() => alert('✅ Laporan terkirim!'));
-     }
-  }
-};
-
-window.openReviewModal = (taskId) => {
-  const isRevision = $('btnSendRevision') && $('btnSendRevision').dataset.mode === 'revision';
-  const notes = prompt(isRevision ? "Masukkan catatan revisi untuk pekerja:" : "Masukkan catatan validasi (opsional):");
-  if (notes === null) return;
-  
-  const newStatus = isRevision ? 'progress' : 'done';
-  const histType = isRevision ? 'revisi' : 'selesai';
-  
-  updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
-    status: newStatus,
-    revisionNotes: isRevision ? notes : '',
-    history: arrayUnion({ type: histType, by: state.workerName, text: notes, at: Date.now() }),
-    updatedAt: serverTimestamp()
-  }).then(() => alert(isRevision ? '↩ Revisi diminta.' : '✅ Tugas divalidasi selesai!'));
-};
 
 function setupEventListeners() {
   $('loginForm').addEventListener('submit', handleLogin);
@@ -1013,6 +1054,7 @@ function setupEventListeners() {
 
 function init() {
   setDefaultDates();
+  initDarkMode(); // Inisialisasi Dark Mode
   setupEventListeners();
   onAuthStateChanged(auth, (user) => {
     if (user) {
