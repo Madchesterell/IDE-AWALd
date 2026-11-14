@@ -682,18 +682,61 @@ td {
 
 .workspace-content {
     flex: 1;
-    padding: 1.5rem;
-    max-width: 1100px;
+    padding: 1.75rem 2rem;
+    max-width: 1200px;
     width: 100%;
 }
 
-.status-text {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.35rem;
-    display: block;
+.daily-goal-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    width: 100%;
 }
 
-.status-text.linked {
-    color: var(--success);
+.daily-goal-form input {
+    flex: 1;
+    padding: 0.7rem 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    background: #fafafa;
+    color: var(--text);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.daily-goal-form input:focus {
+    border-color: var(--primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.daily-goal-form .btn-primary {
+    width: auto;
+    white-space: nowrap;
+    padding: 0.7rem 1.25rem;
+}
+
+.goal-badge:not(:empty) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--success-bg);
+    color: #166534;
+    border: 1px solid var(--success-border);
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .daily-goal-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .daily-goal-form .btn-primary {
+        width: 100%;
+    }
 }
