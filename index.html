@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorkSpacePro - Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563eb'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle' fill='white' font-family='Arial' font-weight='700'%3EW%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- ============ 1. AUTH VIEW (Login/Daftar) — Split Screen ============ -->
-<div id="authView" class="auth-gate-modal auth-split">
+<div id="authView" class="auth-gate-modal auth-split hidden">
     <!-- Sisi kiri: gradient + glassmorphism -->
     <div class="auth-hero">
         <div class="auth-glass">
@@ -31,18 +34,18 @@
             <!-- LOGIN FORM -->
             <form id="loginForm" class="auth-form">
                 <div class="form-group">
-                    <label>Alamat Email</label>
-                    <input type="email" id="loginEmail" required placeholder="Masukkan alamat email">
+                    <label for="loginEmail">Alamat Email</label>
+                    <input type="email" id="loginEmail" autocomplete="email" required placeholder="Masukkan alamat email">
                 </div>
                 <div class="form-group">
-                    <label>Kata Sandi</label>
-                    <input type="password" id="loginPassword" required placeholder="Masukkan kata sandi" minlength="6">
+                    <label for="loginPassword">Kata Sandi</label>
+                    <input type="password" id="loginPassword" autocomplete="current-password" required placeholder="Masukkan kata sandi">
                 </div>
                 <div class="auth-options">
                     <label class="remember-me">
                         <input type="checkbox" id="rememberMe"> Ingat saya
                     </label>
-                    <a href="#" class="forgot-password">Lupa kata sandi?</a>
+                    <a href="#" class="forgot-password" id="forgotPasswordLink">Lupa kata sandi?</a>
                 </div>
                 <button type="submit" class="btn-primary-blue" id="loginBtn">Masuk</button>
             </form>
@@ -50,16 +53,16 @@
             <!-- REGISTER FORM -->
             <form id="registerForm" class="auth-form hidden">
                 <div class="form-group">
-                    <label>Nama Lengkap</label>
-                    <input type="text" id="registerName" required placeholder="Masukkan nama lengkap">
+                    <label for="registerName">Nama Lengkap</label>
+                    <input type="text" id="registerName" autocomplete="name" required placeholder="Masukkan nama lengkap">
                 </div>
                 <div class="form-group">
-                    <label>Alamat Email</label>
-                    <input type="email" id="registerEmail" required placeholder="Masukkan alamat email">
+                    <label for="registerEmail">Alamat Email</label>
+                    <input type="email" id="registerEmail" autocomplete="email" required placeholder="Masukkan alamat email">
                 </div>
                 <div class="form-group">
-                    <label>Kata Sandi</label>
-                    <input type="password" id="registerPassword" required placeholder="Minimal 6 karakter" minlength="6">
+                    <label for="registerPassword">Kata Sandi</label>
+                    <input type="password" id="registerPassword" autocomplete="new-password" required placeholder="Minimal 6 karakter" minlength="6">
                 </div>
                 <button type="submit" class="btn-primary-blue" id="registerBtn">Daftar</button>
             </form>
@@ -68,7 +71,7 @@
                 <span>Atau</span>
             </div>
 
-            <button type="button" class="btn-google">
+            <button type="button" class="btn-google" id="googleLoginBtn">
                 <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.95H1.2v3.14C3.21 21.36 7.34 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.25c-.25-.72-.38-1.49-.38-2.25s.13-1.53.38-2.25V6.61H1.2C.43 8.15 0 9.88 0 12s.43 3.85 1.2 5.39l4.08-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.21 2.64 1.2 6.61l4.08 3.14c.95-2.84 3.6-4.95 6.72-4.95z"/></svg>
                 Masuk dengan Google
             </button>
@@ -116,7 +119,7 @@
         <header class="dashboard-topbar">
             <h2 class="topbar-title">Ruang Kerja</h2>
             <div class="user-profile-badge">
-                <span class="avatar-circle" id="userAvatarInitials">FA</span>
+                <span class="avatar-circle" id="userAvatarInitials"></span>
                 <div class="user-info-text">
                     <span class="user-name" id="userEmailDisplay">Pengguna</span>
                     <span class="user-role">Anggota Aktif</span>
@@ -249,7 +252,7 @@
                         <thead>
                             <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">
                                 <th style="padding: 14px 16px;">Judul Tugas</th>
-                                <th style="padding: 14px 16px;">Karyawan</th>
+                                <th style="padding: 14px 16px;">Anggota</th>
                                 <th style="padding: 14px 16px;">Tingkat Kesulitan</th>
                                 <th style="padding: 14px 16px;">Status</th>
                                 <th style="padding: 14px 16px;">Tenggat Waktu</th>
@@ -274,11 +277,11 @@
                     <h2>Tambah Divisi Baru</h2>
                     <form id="createDivisionForm" style="margin-top: 15px;">
                         <div class="form-group">
-                            <label>Nama Divisi *</label>
+                            <label for="newDivisionName">Nama Divisi *</label>
                             <input type="text" id="newDivisionName" required placeholder="Contoh: IT, Animasi 3D, Marketing">
                         </div>
                         <div class="form-group">
-                            <label>Deskripsi</label>
+                            <label for="newDivisionDesc">Deskripsi</label>
                             <textarea id="newDivisionDesc" rows="3" placeholder="Jelaskan fokus kerja divisi ini..."></textarea>
                         </div>
                         <button type="submit" class="btn-primary">Buat Divisi</button>
@@ -310,18 +313,18 @@
 </div>
 
 <!-- Modal Buat Ruang Kerja -->
-<div id="createWorkspaceModal" class="modal hidden">
+<div id="createWorkspaceModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-content">
-        <span class="close-modal" data-close="createWorkspaceModal">&times;</span>
+        <button type="button" class="close-modal" aria-label="Tutup" data-close="createWorkspaceModal">&times;</button>
         <h2>Buat Ruang Kerja Baru</h2>
         <p class="subtitle">Anda akan menjadi Mentor. Buat kode undangan 6 karakter untuk dibagikan kepada anggota.</p>
         <form id="createWorkspaceForm">
             <div class="form-group">
-                <label>Nama Ruang Kerja</label>
+                <label for="newWorkspaceName">Nama Ruang Kerja</label>
                 <input type="text" id="newWorkspaceName" required placeholder="Contoh: Tim Animasi SMKN 4">
             </div>
             <div class="form-group">
-                <label>Kode Undangan (6 karakter)</label>
+                <label for="newWorkspaceCode">Kode Undangan (6 karakter)</label>
                 <input type="text" id="newWorkspaceCode" required placeholder="Contoh: A1B2C3" maxlength="6" minlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;" pattern="[A-Za-z0-9]{6}" title="Harus 6 karakter huruf atau angka">
             </div>
             <button type="submit" class="btn-primary" id="createWorkspaceSubmitBtn">Buat Ruang Kerja</button>
@@ -330,14 +333,14 @@
 </div>
 
 <!-- Modal Gabung Ruang Kerja -->
-<div id="joinWorkspaceModal" class="modal hidden">
+<div id="joinWorkspaceModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-content">
-        <span class="close-modal" data-close="joinWorkspaceModal">&times;</span>
+        <button type="button" class="close-modal" aria-label="Tutup" data-close="joinWorkspaceModal">&times;</button>
         <h2>Gabung Ruang Kerja</h2>
         <p class="subtitle">Masukkan kode undangan yang diberikan oleh Mentor.</p>
         <form id="joinWorkspaceForm">
             <div class="form-group">
-                <label>Kode Undangan (6 karakter)</label>
+                <label for="joinCodeInput">Kode Undangan (6 karakter)</label>
                 <input type="text" id="joinCodeInput" required placeholder="Contoh: A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
             </div>
             <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Ruang Kerja</button>
@@ -346,9 +349,9 @@
 </div>
 
 <!-- Modal Laporan -->
-<div id="reportModal" class="modal hidden">
+<div id="reportModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-content">
-        <span class="close-modal" id="closeModalBtn">&times;</span>
+        <button type="button" class="close-modal" aria-label="Tutup" id="closeModalBtn">&times;</button>
         <h2>Kirim Laporan & Bukti Kerja</h2>
         <p class="subtitle" id="reportModalSubtitle">Unggah tugas Anda sesuai arahan mentor.</p>
         <form id="submitReportForm">
@@ -364,11 +367,12 @@
 </div>
 
 <!-- Modal Validasi / Revisi Mentor -->
-<div id="reviewModal" class="modal hidden">
+<div id="reviewModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-content">
-        <span class="close-modal" id="closeReviewModalBtn">&times;</span>
+        <button type="button" class="close-modal" aria-label="Tutup" id="closeReviewModalBtn">&times;</button>
         <h2>Evaluasi & Validasi Tugas</h2>
         <p class="subtitle">Berikan keputusan validasi atau catatan revisi untuk pekerja.</p>
+        <div id="reviewReportNotes" class="review-report-box"></div>
         <form id="submitReviewForm">
             <input type="hidden" id="reviewTaskId">
             <div class="form-group">
@@ -385,25 +389,25 @@
 </div>
 
 <!-- Modal Edit Anggota Divisi -->
-<div id="editMemberModal" class="modal hidden">
+<div id="editMemberModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-content">
-        <span class="close-modal" data-close="editMemberModal">&times;</span>
+        <button type="button" class="close-modal" aria-label="Tutup" data-close="editMemberModal">&times;</button>
         <h2>Atur Divisi & Peran Anggota</h2>
         <form id="editMemberForm" style="margin-top: 15px;">
             <input type="hidden" id="editMemberId">
             <div class="form-group">
-                <label>Nama Anggota</label>
+                <label for="editMemberNameDisplay">Nama Anggota</label>
                 <input type="text" id="editMemberNameDisplay" disabled style="background: #f3f4f6;">
             </div>
             <div class="form-group">
-                <label>Peran (Role)</label>
+                <label for="editMemberRole">Peran (Role)</label>
                 <select id="editMemberRole" class="form-control" required>
                     <option value="worker">Pekerja (Worker / Employee)</option>
                     <option value="mentor">Mentor (Manager / Admin)</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Divisi Penugasan</label>
+                <label for="editMemberDivision">Divisi Penugasan</label>
                 <select id="editMemberDivision" class="form-control" required>
                     <option value="Umum">(Umum)</option>
                 </select>
@@ -413,6 +417,7 @@
     </div>
 </div>
 
+<noscript>Aplikasi ini membutuhkan JavaScript untuk berjalan.</noscript>
 <script type="module" src="script.js"></script>
 </body>
 </html>
