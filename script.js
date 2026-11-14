@@ -1,11 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getFirestore, collection, doc, addDoc, setDoc, getDoc, updateDoc, deleteDoc,
-  onSnapshot, query, where, orderBy, getDocs, limit, serverTimestamp, arrayUnion
+  onSnapshot, query, where, orderBy, getDocs, limit, serverTimestamp, arrayUnion, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, updateProfile
+  signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, signInWithPopup,
+  sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -42,11 +43,16 @@ function escapeHtml(str) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function generateJoinCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+function safeUrl(u) {
+  try {
+    const url = new URL(String(u || '').trim());
+    return (url.protocol === 'https:' || url.protocol === 'http:') ? url.href : '';
+  } catch { return ''; }
+}
+
+function localDate(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 function setLiveStatus(ok) {
@@ -66,7 +72,7 @@ function showDashboardView() {
   $('authView').classList.add('hidden');
   $('dashboardView').classList.remove('hidden');
   $('workspaceView').classList.add('hidden');
-  $('userEmailDisplay').textContent = state.user?.email || '';
+  $('userEmailDisplay').textContent = state.user?.displayName || state.user?.email || '';
   loadUserWorkspaces();
 }
 
@@ -86,13 +92,6 @@ function showWorkspaceView() {
   $('mentorPanel').classList.toggle('hidden', !isMentor);
   $('workerDailyGoalBox').classList.toggle('hidden', isMentor);
   
-  // Ubah teks tombol pertama menjadi "Tugas Saya" untuk pekerja
-  const taskLabel = $('tabTaskLabel');
-  if (taskLabel) taskLabel.textContent = isMentor ? 'Papan Tugas' : 'Tugas Saya';
-
-  $('mentorPanel').classList.toggle('hidden', !isMentor);
-  $('workerDailyGoalBox').classList.toggle('hidden', isMentor);
-
   $('roleControls').innerHTML = `
     <span style="font-size:0.8rem;color:var(--text-muted);">
       ${isMentor ? 'Mentor / Admin' : 'Anggota'} ·
@@ -109,13 +108,13 @@ function switchWorkspaceTab(tabName) {
   if (tabName === 'task') {
     $('mainTaskContainer').classList.remove('hidden');
     $('divisionManagementPanel').classList.add('hidden');
-    if (taskBtn) { taskBtn.classList.add('active'); taskBtn.classList.remove('btn-primary', 'btn-secondary'); }
-    if (divBtn) { divBtn.classList.remove('active'); divBtn.classList.remove('btn-primary', 'btn-secondary'); }
+    if (taskBtn) { taskBtn.classList.add('active');  }
+    if (divBtn) { divBtn.classList.remove('active');  }
   } else {
     $('mainTaskContainer').classList.add('hidden');
     $('divisionManagementPanel').classList.remove('hidden');
-    if (taskBtn) { taskBtn.classList.remove('active'); taskBtn.classList.remove('btn-primary', 'btn-secondary'); }
-    if (divBtn) { divBtn.classList.add('active'); divBtn.classList.remove('btn-primary', 'btn-secondary'); }
+    if (taskBtn) { taskBtn.classList.remove('active');  }
+    if (divBtn) { divBtn.classList.add('active');  }
     renderDivisionManagement();
   }
 }
@@ -145,6 +144,7 @@ async function handleLogin(e) {
   const original = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ Masuk...';
   try {
+    await setPersistence(auth, $('rememberMe').checked ? browserLocalPersistence : browserSessionPersistence);
     await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
     alert('Gagal masuk: ' + mapAuthError(err.code));
@@ -182,7 +182,11 @@ function mapAuthError(code) {
     'auth/user-not-found': 'Email tidak terdaftar.',
     'auth/wrong-password': 'Kata sandi salah.',
     'auth/invalid-credential': 'Email atau kata sandi salah.',
-    'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.'
+    'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.',
+    'auth/network-request-failed': 'Koneksi internet bermasalah.',
+    'auth/user-disabled': 'Akun ini dinonaktifkan.',
+    'auth/popup-blocked': 'Popup diblokir browser.',
+    'auth/operation-not-allowed': 'Metode masuk ini belum diaktifkan di Firebase.'
   };
   return map[code] || code;
 }
@@ -258,26 +262,27 @@ async function handleCreateWorkspace(e) {
     }
 
     const joinCode = codeInput;
-    const wsRef = await addDoc(collection(db, 'workspaces'), {
-      name, ownerUid: state.user.uid, joinCode, driveLink: drive, createdAt: serverTimestamp()
+    const uid = state.user.uid;
+    const mentorName = state.user.displayName || 'Mentor';
+    const wsRef = doc(collection(db, 'workspaces'));
+    const batch = writeBatch(db);
+    batch.set(wsRef, {
+      name, ownerUid: uid, joinCode, driveLink: drive ? safeUrl(drive) : '', createdAt: serverTimestamp()
     });
+    batch.set(doc(db, 'workspaces', wsRef.id, 'members', uid), {
+      uid, email: state.user.email, name: mentorName, role: 'mentor', division: 'Manajemen', joinedAt: serverTimestamp()
+    });
+    batch.set(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true });
+    await batch.commit();
 
     state.workspaceId = wsRef.id;
     state.workspaceName = name;
     state.role = 'mentor';
-    state.workerName = state.user.displayName || 'Mentor';
+    state.workerName = mentorName;
     $('createWorkspaceModal').classList.add('hidden');
     $('createWorkspaceForm').reset();
     showWorkspaceView();
     subscribeToWorkspace();
-
-    Promise.all([
-      setDoc(doc(db, 'workspaces', wsRef.id, 'members', state.user.uid), {
-        uid: state.user.uid, email: state.user.email,
-        name: state.workerName, role: 'mentor', division: 'Manajemen', joinedAt: serverTimestamp()
-      }),
-      setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true })
-    ]).catch(err => console.error('Background update gagal:', err));
     
   } catch (err) {
     console.error(err);
@@ -304,20 +309,34 @@ async function handleJoinWorkspace(e) {
     const wsDoc = snap.docs[0];
     const wsData = wsDoc.data();
 
-    const membersSnap = await getDocs(collection(db, 'workspaces', wsDoc.id, 'members'));
-    if (membersSnap.size >= 20) return alert('Ruang kerja sudah penuh (maksimal 20 anggota).');
-
+    const uid = state.user.uid;
+    const myMemberRef = doc(db, 'workspaces', wsDoc.id, 'members', uid);
+    const existingMe = await getDoc(myMemberRef);
     const myName = state.user.displayName || state.user.email.split('@')[0];
-    await setDoc(doc(db, 'workspaces', wsDoc.id, 'members', state.user.uid), {
-      uid: state.user.uid, email: state.user.email,
-      name: myName, role: 'worker', division: 'Umum', joinedAt: serverTimestamp()
-    });
-    setDoc(doc(db, 'users', state.user.uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
+    let myRole = 'worker';
+    let finalName = myName;
+
+    if (existingMe.exists()) {
+      // Sudah anggota: jangan timpa peran/divisi, langsung buka
+      myRole = existingMe.data().role || 'worker';
+      finalName = existingMe.data().name || myName;
+      await setDoc(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
+    } else {
+      const membersSnap = await getDocs(collection(db, 'workspaces', wsDoc.id, 'members'));
+      const workerCount = membersSnap.docs.filter(d => d.data().role === 'worker').length;
+      if (workerCount >= 20) { alert('Ruang kerja sudah penuh (maksimal 20 anggota).'); return; }
+      const batch = writeBatch(db);
+      batch.set(myMemberRef, {
+        uid, email: state.user.email, name: myName, role: 'worker', division: 'Umum', joinedAt: serverTimestamp()
+      });
+      batch.set(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
+      await batch.commit();
+    }
 
     state.workspaceId = wsDoc.id;
     state.workspaceName = wsData.name;
-    state.role = 'worker';
-    state.workerName = myName;
+    state.role = myRole;
+    state.workerName = finalName;
     $('joinWorkspaceModal').classList.add('hidden');
     $('joinWorkspaceForm').reset();
     showWorkspaceView();
@@ -365,10 +384,18 @@ function subscribeToWorkspace() {
   unsubscribers = [];
 
   const membersRef = collection(db, 'workspaces', state.workspaceId, 'members');
-  unsubscribers.push(onSnapshot(query(membersRef, orderBy('joinedAt', 'asc')),
+  unsubscribers.push(onSnapshot(membersRef,
     (snap) => {
-      state.members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      state.members = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.joinedAt?.seconds || 0) - (b.joinedAt?.seconds || 0));
+      const me = state.members.find(m => m.id === state.user.uid);
+      if (me) {
+        state.workerName = me.name || state.workerName;
+        if (me.role !== state.role) { state.role = me.role; showWorkspaceView(); }
+      }
       renderMembers();
+      renderTasks();
+      if (!$('divisionManagementPanel').classList.contains('hidden')) renderDivisionManagement();
       updateAssigneeSelect();
       updateWorkerCount();
       loadDailyGoal();
@@ -382,6 +409,7 @@ function subscribeToWorkspace() {
     (snap) => {
       state.divisions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderDivisionOptions();
+      if (!$('divisionManagementPanel').classList.contains('hidden')) renderDivisionManagement();
     },
     (err) => { console.error(err); }
   ));
@@ -390,7 +418,7 @@ function subscribeToWorkspace() {
   unsubscribers.push(onSnapshot(query(tasksRef, orderBy('createdAt', 'desc')),
     (snap) => {
       state.tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderKanban();
+      renderTasks();
       setLiveStatus(true);
     },
     (err) => { console.error(err); setLiveStatus(false); }
@@ -402,7 +430,8 @@ function subscribeToWorkspace() {
         state.driveLink = docSnap.data().driveLink || '';
         updateDriveStatus();
       }
-    }
+    },
+    (err) => { console.error(err); }
   ));
 }
 
@@ -420,9 +449,11 @@ function updateAssigneeSelect() {
   const select = $('taskAssignee');
   if (!select) return;
   const workers = state.members.filter(m => m.role === 'worker');
+  const prev = select.value;
   select.innerHTML = workers.length
     ? workers.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('')
     : '<option value="">(Belum ada pekerja)</option>';
+  if (prev && [...select.options].some(o => o.value === prev)) select.value = prev;
 }
 
 function updateWorkerCount() {
@@ -445,7 +476,10 @@ function updateDriveStatus(liveValue = null) {
   } else {
     const isSaved = currentVal === savedVal && savedVal !== '';
     const labelStatus = isSaved ? '✅ Folder tertaut:' : '⏳ Tautan terdeteksi (belum disimpan):';
-    statusEl.innerHTML = `${labelStatus} <a href="${escapeHtml(currentVal)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;word-break:break-all;">${escapeHtml(currentVal)}</a>`;
+    const href = safeUrl(currentVal);
+    statusEl.innerHTML = href
+      ? `${labelStatus} <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;word-break:break-all;">${escapeHtml(currentVal)}</a>`
+      : '⚠️ Tautan tidak valid (harus diawali http:// atau https://)';
     statusEl.classList.add('linked');
   }
 
@@ -457,11 +491,11 @@ function updateDriveStatus(liveValue = null) {
 function renderDivisionOptions() {
   const selectDiv = $('editMemberDivision');
   if (!selectDiv) return;
-  const defaultOpts = '<option value="Umum">(Umum)</option>';
+  const defaultOpts = '<option value="Umum">(Umum)</option>' + (state.divisions.some(d => d.name === 'Manajemen') ? '' : '<option value="Manajemen">Manajemen</option>');
   selectDiv.innerHTML = defaultOpts + state.divisions.map(d => `<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
 }
 
-function renderKanban() {
+function renderTasks() {
   const tbody = $('taskTableBody');
   if (!tbody) return;
 
@@ -476,7 +510,7 @@ function renderKanban() {
   }
 
   tbody.innerHTML = filteredTasks.map(task => {
-    const isOverdue = task.endDate && new Date(task.endDate) < new Date() && task.status !== 'done';
+    const isOverdue = task.endDate && new Date(task.endDate + 'T23:59:59') < new Date() && task.status !== 'done';
     const isWorker = state.role === 'worker';
     const isMentor = state.role === 'mentor';
     
@@ -487,8 +521,8 @@ function renderKanban() {
 
     let statusBg = '#f3f4f6';
     let statusColor = '#374151';
-    let statusText = 'To Do';
-    if (task.status === 'progress') { statusBg = '#dbeafe'; statusColor = '#1e40af'; statusText = 'In Progress'; }
+    let statusText = 'Belum Mulai';
+    if (task.status === 'progress') { statusBg = '#dbeafe'; statusColor = '#1e40af'; statusText = 'Berjalan'; }
     else if (task.status === 'review') { statusBg = '#f3e8ff'; statusColor = '#6b21a8'; statusText = 'Dinilai'; }
     else if (task.status === 'done') { statusBg = '#dcfce7'; statusColor = '#15803d'; statusText = 'Selesai'; }
 
@@ -511,7 +545,7 @@ function renderKanban() {
         <td style="padding: 14px 16px;">
           <div style="font-weight: 600; color: #1f2937; font-size: 0.92rem;">${escapeHtml(task.title)}</div>
           <div style="font-size: 0.78rem; color: #6b7280; margin-top: 2px;">${escapeHtml(task.desc || 'Tanpa keterangan tambahan')}</div>
-          ${task.reportFileLink ? `<a href="${escapeHtml(task.reportFileLink)}" target="_blank" style="font-size: 0.75rem; color: #2563eb; text-decoration: underline; display: inline-block; margin-top: 2px;">🔗 Lihat File Drive</a>` : ''}
+          ${safeUrl(task.reportFileLink) ? `<a href="${escapeHtml(safeUrl(task.reportFileLink))}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: #2563eb; text-decoration: underline; display: inline-block; margin-top: 2px;">🔗 Lihat File Drive</a>` : ''}
           ${task.revisionNotes ? `<div style="font-size: 0.75rem; color: #92400e; background: #fffbeb; padding: 2px 6px; border-radius: 4px; margin-top: 2px;">⚠️ Revisi: ${escapeHtml(task.revisionNotes)}</div>` : ''}
         </td>
         <td style="padding: 14px 16px; font-size: 0.88rem; color: #4b5563;">
@@ -542,7 +576,7 @@ function renderKanban() {
 
 function loadDailyGoal() {
   const me = state.members.find(m => m.id === state.user?.uid);
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDate();
   const display = $('dailyGoalDisplay');
   if (!display) return;
   if (me && me.goalDate === today && me.dailyGoal) {
@@ -553,12 +587,10 @@ function loadDailyGoal() {
 }
 
 function setDefaultDates() {
-  const today = new Date();
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const startEl = $('startDate');
   const endEl = $('endDate');
-  if (startEl) startEl.valueAsDate = today;
-  if (endEl) endEl.valueAsDate = nextWeek;
+  if (startEl) startEl.value = localDate();
+  if (endEl) endEl.value = localDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 }
 
 function renderDivisionManagement() {
@@ -597,9 +629,16 @@ function renderDivisionManagement() {
 }
 
 window.deleteDivision = async (divId) => {
-  if (!confirm('Hapus divisi ini?')) return;
+  const div = state.divisions.find(d => d.id === divId);
+  if (!confirm('Hapus divisi ini? Anggota di dalamnya akan dipindahkan ke "Umum".')) return;
   try {
-    await deleteDoc(doc(db, 'workspaces', state.workspaceId, 'divisions', divId));
+    const batch = writeBatch(db);
+    if (div) {
+      state.members.filter(m => m.division === div.name).forEach(m =>
+        batch.update(doc(db, 'workspaces', state.workspaceId, 'members', m.id), { division: 'Umum' }));
+    }
+    batch.delete(doc(db, 'workspaces', state.workspaceId, 'divisions', divId));
+    await batch.commit();
   } catch (err) { alert('Gagal: ' + err.message); }
 };
 
@@ -614,6 +653,11 @@ window.openEditMemberModal = (memberId) => {
 };
 
 window.moveTask = async (taskId, newStatus) => {
+  const t = state.tasks.find(x => x.id === taskId);
+  if (!t) return;
+  const ok = (state.role === 'worker' && t.assignee === state.workerName && t.status === 'todo' && newStatus === 'progress')
+          || (state.role === 'mentor' && t.status === 'done' && newStatus === 'review');
+  if (!ok) return alert('Perubahan status ini tidak diizinkan.');
   try {
     await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
       status: newStatus, updatedAt: serverTimestamp()
@@ -632,8 +676,8 @@ window.openReportModal = (taskId) => {
     container.innerHTML = `
       <label>Tautan Folder Google Drive Utama Ruang Kerja</label>
       <div style="padding: 10px; background: rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 8px;">
-        ${state.driveLink ? `
-          <a href="${escapeHtml(state.driveLink)}" target="_blank" style="color: var(--primary-color); font-weight: 600; text-decoration: underline;">
+        ${safeUrl(state.driveLink) ? `
+          <a href="${escapeHtml(safeUrl(state.driveLink))}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600; text-decoration: underline;">
             📂 Buka Folder Drive Utama Ruang Kerja
           </a>
           <input type="hidden" id="reportDriveLink" value="${escapeHtml(state.driveLink)}">
@@ -659,6 +703,13 @@ window.openReportModal = (taskId) => {
 window.openReviewModal = (taskId) => {
   $('reviewTaskId').value = taskId;
   $('mentorReviewNotes').value = '';
+  const reviewTask = state.tasks.find(x => x.id === taskId);
+  const notesBox = $('reviewReportNotes');
+  if (notesBox) {
+    const link = safeUrl(reviewTask?.reportFileLink);
+    notesBox.innerHTML = `<strong>Catatan pekerja:</strong> ${escapeHtml(reviewTask?.reportNotes || '-')}` +
+      (link ? `<br><a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">🔗 Buka file Drive</a>` : '');
+  }
   $('reviewModal').classList.remove('hidden');
 };
 
@@ -667,6 +718,25 @@ function setupEventListeners() {
   $('registerForm').addEventListener('submit', handleRegister);
   $('authToggleLink').addEventListener('click', (e) => { e.preventDefault(); toggleAuthMode(); });
   $('logoutBtn').addEventListener('click', handleLogout);
+
+  $('googleLoginBtn').addEventListener('click', async () => {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        alert('Gagal masuk dengan Google: ' + mapAuthError(err.code));
+      }
+    }
+  });
+
+  $('forgotPasswordLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = $('loginEmail').value.trim();
+    if (!email) return alert('Isi alamat email dulu, lalu klik "Lupa kata sandi?".');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert('Tautan reset kata sandi dikirim ke ' + email + '.');
+    } catch (err) { alert('Gagal: ' + mapAuthError(err.code)); }
+  });
 
   $('createWorkspaceBtn').addEventListener('click', () => $('createWorkspaceModal').classList.remove('hidden'));
   $('joinWorkspaceBtn').addEventListener('click', () => $('joinWorkspaceModal').classList.remove('hidden'));
@@ -692,6 +762,8 @@ function setupEventListeners() {
   if ($('saveDriveBtn')) {
     $('saveDriveBtn').addEventListener('click', async () => {
       const link = ($('driveLinkInput')?.value || '').trim();
+      if (state.role !== 'mentor') return;
+      if (link && !safeUrl(link)) return alert('Tautan harus diawali http:// atau https://');
       try {
         await updateDoc(doc(db, 'workspaces', state.workspaceId), { driveLink: link });
         state.driveLink = link;
@@ -707,6 +779,9 @@ function setupEventListeners() {
 
   // Listener input real-time untuk verifikasi teks Drive
   if ($('driveLinkInput')) {
+    $('driveLinkInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); $('saveDriveBtn')?.click(); }
+    });
     $('driveLinkInput').addEventListener('input', (e) => {
       updateDriveStatus(e.target.value);
     });
@@ -758,6 +833,7 @@ function setupEventListeners() {
     const endDate = $('endDate').value;
 
     if (!title || !assignee) return alert('Judul & assignee wajib diisi!');
+    if (state.role !== 'mentor') return;
     if (startDate && endDate && endDate < startDate) {
       return alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
     }
@@ -795,6 +871,9 @@ function setupEventListeners() {
     const reportLink = reportLinkEl ? reportLinkEl.value.trim() : (state.driveLink || '');
 
     if (!reportLink) return alert('Tautan Google Drive wajib diisi!');
+    if (!safeUrl(reportLink)) return alert('Tautan harus diawali http:// atau https://');
+    const reportTask = state.tasks.find(x => x.id === taskId);
+    if (!reportTask || reportTask.status !== 'progress') return alert('Tugas ini tidak sedang dikerjakan.');
 
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
@@ -849,6 +928,9 @@ function setupEventListeners() {
     const name = $('newDivisionName').value.trim();
     const desc = $('newDivisionDesc').value.trim();
     if (!name) return alert('Nama divisi wajib diisi.');
+    if (name.toLowerCase() === 'umum' || state.divisions.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+      return alert('Nama divisi sudah ada.');
+    }
     try {
       await addDoc(collection(db, 'workspaces', state.workspaceId, 'divisions'), {
         name, desc, createdAt: serverTimestamp()
@@ -863,6 +945,10 @@ function setupEventListeners() {
     const memId = $('editMemberId').value;
     const newRole = $('editMemberRole').value;
     const newDiv = $('editMemberDivision').value;
+    const target = state.members.find(m => m.id === memId);
+    if (target?.role === 'mentor' && newRole !== 'mentor' && state.members.filter(m => m.role === 'mentor').length <= 1) {
+      return alert('Tidak bisa menurunkan mentor terakhir.');
+    }
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'members', memId), {
         role: newRole,
@@ -879,7 +965,7 @@ function setupEventListeners() {
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'members', state.user.uid), {
         dailyGoal: goal,
-        goalDate: new Date().toISOString().split('T')[0]
+        goalDate: localDate()
       });
       $('dailyGoalInput').value = '';
     } catch (err) { alert('Gagal: ' + err.message); }
@@ -896,7 +982,8 @@ function init() {
       const initialsEl = $('userAvatarInitials');
       if (initialsEl) {
         const nameSource = user.displayName || user.email || 'FA';
-        initialsEl.textContent = nameSource.substring(0, 2).toUpperCase();
+        const words = (user.displayName || '').trim().split(/\s+/).filter(Boolean);
+        initialsEl.textContent = (words.length > 1 ? words[0][0] + words[1][0] : nameSource.substring(0, 2)).toUpperCase();
       }
 
       ensureUserDoc(user)
@@ -904,7 +991,10 @@ function init() {
         .finally(() => showDashboardView());
 
     } else {
-      state.user = null;
+      unsubscribers.forEach(u => u());
+      unsubscribers = [];
+      state = { user: null, workspaceId: null, workspaceName: null, role: null, workerName: null,
+                driveLink: '', members: [], tasks: [], divisions: [] };
       showAuthView();
     }
   });
