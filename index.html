@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Workspace - Task & KPI Tracker</title>
+    <title>WorkSpacePro - Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -37,7 +37,7 @@
             <button type="submit" class="btn-primary-blue" id="loginBtn">Masuk ke Dashboard</button>
         </form>
 
-        <!-- REGISTER FORM (hidden default) -->
+        <!-- REGISTER FORM -->
         <form id="registerForm" class="auth-form hidden">
             <div class="form-group">
                 <label>Nama Lengkap</label>
@@ -70,37 +70,60 @@
     </div>
 </div>
 
-<!-- ============ 2. DASHBOARD VIEW ============ -->
-<div id="dashboardView" class="hidden">
-    <header class="navbar">
-        <div class="brand">
-            <h1>WorkSpace<span>Pro</span></h1>
+<!-- ============ 2. DASHBOARD VIEW (Layout Baru ala Gambar 2) ============ -->
+<div id="dashboardView" class="hidden dashboard-layout">
+    <!-- Sidebar Kiri -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h3>WorkSpace<span>Pro</span></h3>
         </div>
-        <div class="role-controls">
-            <span id="userEmailDisplay" style="font-size:0.8rem;color:var(--text-muted);"></span>
-            <button type="button" id="logoutBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">Keluar</button>
-        </div>
-    </header>
-
-    <main class="container">
-        <div class="dashboard-header">
-            <div>
-                <h2>Workspace Saya</h2>
-                <p class="subtitle">Pilih workspace untuk masuk, atau buat/gabung yang baru.</p>
-            </div>
-            <div class="dashboard-actions">
-                <button type="button" id="createWorkspaceBtn" class="btn-primary" style="width:auto;">+ Buat Workspace</button>
-                <button type="button" id="joinWorkspaceBtn" class="btn-secondary">Gabung Workspace</button>
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active">Dashboard</a>
+            <div class="menu-section">
+                <span class="menu-section-title">Ruang Kerja</span>
+                <div class="sidebar-action-buttons">
+                    <button type="button" id="createWorkspaceBtn" class="btn-sidebar-action">+ Buat Ruang Kerja</button>
+                    <button type="button" id="joinWorkspaceBtn" class="btn-sidebar-action secondary">Gabung Ruang Kerja</button>
+                </div>
             </div>
         </div>
-
-        <div id="workspaceList" class="workspace-grid">
-            <p class="empty-hint">Memuat workspace...</p>
+        <div class="sidebar-footer">
+            <button type="button" id="logoutBtn" class="btn-logout-sidebar">Keluar</button>
         </div>
-    </main>
+    </aside>
+
+    <!-- Konten Utama Kanan -->
+    <div class="main-content-wrapper">
+        <header class="dashboard-topbar">
+            <h2 class="topbar-title">WorkSpace</h2>
+            <div class="user-profile-badge">
+                <span class="avatar-circle">FA</span>
+                <div class="user-info-text">
+                    <span class="user-name">Farrel Abyantara</span>
+                    <span class="user-role">Admin / Member</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <!-- Alert Selamat Datang -->
+            <div class="welcome-alert">
+                <span>✅ Selamat datang kembali, Farrel Abyantara!</span>
+            </div>
+
+            <div class="section-header-title" style="margin-bottom: 1rem;">
+                <h3>Workspace Saya</h3>
+                <p class="subtitle" style="margin:0;">Pilih workspace untuk masuk, atau buat/gabung yang baru.</p>
+            </div>
+
+            <div id="workspaceList" class="workspace-grid">
+                <p class="empty-hint">Memuat workspace...</p>
+            </div>
+        </main>
+    </div>
 </div>
 
-<!-- ============ 3. WORKSPACE VIEW ============ -->
+<!-- ============ 3. WORKSPACE VIEW (Ruang Kerja Aktif) ============ -->
 <div id="workspaceView" class="hidden">
     <header class="navbar">
         <div class="brand" style="display: flex; align-items: center; gap: 10px;">
