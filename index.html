@@ -104,6 +104,7 @@
                     <button type="button" id="joinWorkspaceBtn" class="btn-sidebar-action secondary">
                         <span class="menu-icon">↗</span> Gabung Ruang Kerja
                     </button>
+                    <button type="button" id="accountBtn" class="btn-sidebar-action secondary"><span class="menu-icon">⚙</span> Pengaturan Akun</button>
                 </div>
             </div>
         </div>
@@ -158,15 +159,16 @@
             <div class="ws-sidebar-section">
                 <span class="ws-sidebar-label">Menu Ruang Kerja</span>
                 <button type="button" id="tabTaskView" class="ws-nav-item active">
-                    <span class="menu-icon">▦</span> <span id="tabTaskLabel">Papan Tugas</span>
+                    <span class="menu-icon">▦</span> <span id="tabTaskLabel">Papan Tugas</span><span id="taskBadge" class="nav-badge hidden"></span>
                 </button>
                 <button type="button" id="tabDivisionView" class="ws-nav-item hidden">
                     <span class="menu-icon">◎</span> Manajemen Divisi
                 </button>
             </div>
-            <button type="button" id="backToDashboardBtn" class="ws-back-btn">
-                <span class="menu-icon">←</span> Kembali ke Dashboard
-            </button>
+            <div class="ws-sidebar-bottom">
+                <button type="button" id="leaveWorkspaceBtn" class="ws-back-btn danger"><span class="menu-icon">⎋</span> Keluar dari Ruang Kerja</button>
+                <button type="button" id="backToDashboardBtn" class="ws-back-btn"><span class="menu-icon">←</span> Kembali ke Dashboard</button>
+            </div>
         </aside>
 
         <!-- Konten kanan -->
@@ -245,6 +247,15 @@
                 </div>
             </section>
 
+            <!-- Cari & filter -->
+            <div class="card task-toolbar">
+                <input type="search" id="taskSearch" placeholder="Cari judul atau deskripsi...">
+                <select id="filterStatus"><option value="">Semua status</option><option value="todo">Belum Mulai</option><option value="progress">Berjalan</option><option value="review">Dinilai</option><option value="done">Selesai</option></select>
+                <select id="filterDifficulty"><option value="">Semua kesulitan</option><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select>
+                <select id="filterDue"><option value="">Semua tenggat</option><option value="overdue">Terlambat</option><option value="soon">Segera (≤ 2 hari)</option><option value="week">7 hari ke depan</option></select>
+                <select id="filterAssignee" class="hidden"></select>
+            </div>
+
             <!-- Tabel Daftar Tugas Horizontal -->
             <section class="card" style="padding: 0; overflow: hidden;">
                 <div style="overflow-x: auto;">
@@ -258,7 +269,7 @@
                                 <th class="col-center" style="padding: 14px 16px;">Status</th>
                                 <th style="padding: 14px 16px;">Tenggat Waktu</th>
                                 <th style="padding: 14px 16px;">File Drive</th>
-                                <th class="col-right" style="padding: 14px 16px;">Aksi</th>
+                                <th class="col-center" style="padding: 14px 16px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="taskTableBody"></tbody>
@@ -288,6 +299,15 @@
                         </div>
                         <button type="submit" class="btn-primary">Buat Divisi</button>
                     </form>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h2>Pengaturan Ruang Kerja</h2>
+                <p class="subtitle">Kode undangan saat ini: <strong id="wsCodeDisplay" class="code-chip">-</strong></p>
+                <div class="ws-settings-actions">
+                    <button type="button" id="changeCodeBtn" class="btn-secondary">🔑 Ganti Kode Undangan</button>
+                    <button type="button" id="deleteWorkspaceBtn" class="btn-secondary btn-danger-soft">🗑 Hapus Ruang Kerja</button>
                 </div>
             </div>
 
@@ -346,6 +366,52 @@
                 <input type="text" id="joinCodeInput" required placeholder="Contoh: A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
             </div>
             <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Ruang Kerja</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Edit Tugas -->
+<div id="editTaskModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+        <button type="button" class="close-modal" aria-label="Tutup" data-close="editTaskModal">&times;</button>
+        <h2>Edit Tugas</h2>
+        <form id="editTaskForm" style="margin-top: 15px;">
+            <input type="hidden" id="editTaskId">
+            <div class="form-group"><label for="editTaskTitle">Judul Tugas</label><input type="text" id="editTaskTitle" required></div>
+            <div class="form-row">
+                <div class="form-group"><label for="editTaskAssignee">Ditugaskan Kepada</label><select id="editTaskAssignee" required></select></div>
+                <div class="form-group"><label for="editTaskDifficulty">Tingkat Kesulitan</label><select id="editTaskDifficulty"><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option></select></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label for="editTaskStart">Tanggal Mulai</label><input type="date" id="editTaskStart" required></div>
+                <div class="form-group"><label for="editTaskEnd">Tenggat Waktu</label><input type="date" id="editTaskEnd" required></div>
+            </div>
+            <div class="form-group"><label for="editTaskDesc">Instruksi & Kriteria</label><textarea id="editTaskDesc" rows="3"></textarea></div>
+            <button type="submit" class="btn-primary">Simpan Perubahan</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Riwayat -->
+<div id="historyModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+        <button type="button" class="close-modal" aria-label="Tutup" data-close="historyModal">&times;</button>
+        <h2>Riwayat Tugas</h2>
+        <p class="subtitle" id="historyTitle"></p>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<!-- Modal Pengaturan Akun -->
+<div id="accountModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+        <button type="button" class="close-modal" aria-label="Tutup" data-close="accountModal">&times;</button>
+        <h2>Pengaturan Akun</h2>
+        <p class="subtitle">Mengganti nama juga memperbarui nama di semua ruang kerja dan tugas Anda.</p>
+        <form id="accountForm">
+            <div class="form-group"><label for="accountName">Nama</label><input type="text" id="accountName" required autocomplete="name"></div>
+            <div class="form-group"><label for="accountPassword">Kata Sandi Baru (opsional)</label><input type="password" id="accountPassword" minlength="6" autocomplete="new-password" placeholder="Kosongkan jika tidak diganti"></div>
+            <button type="submit" class="btn-primary">Simpan</button>
         </form>
     </div>
 </div>
