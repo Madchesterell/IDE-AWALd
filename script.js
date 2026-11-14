@@ -221,15 +221,26 @@ function renderWorkspaceList(workspaces) {
 async function handleCreateWorkspace(e) {
   e.preventDefault();
   const name = $('newWorkspaceName').value.trim();
-  const drive = $('newWorkspaceDrive').value.trim();
+  const codeInput = ($('newWorkspaceCode')?.value || '').trim().toUpperCase();
+  const drive = ($('newWorkspaceDrive')?.value || '').trim();
   if (!name) return alert('Nama workspace wajib diisi.');
+  if (codeInput.length !== 6) return alert('Kode undangan / password harus tepat 6 karakter.');
+  if (!/^[A-Z0-9]{6}$/.test(codeInput)) return alert('Kode hanya boleh huruf dan angka (6 karakter).');
 
   const btn = $('createWorkspaceSubmitBtn');
   const original = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ Membuat...';
 
   try {
-    const joinCode = generateJoinCode();
+    // Cek apakah kode sudah dipakai
+    const existing = await getDocs(query(collection(db, 'workspaces'), where('joinCode', '==', codeInput), limit(1)));
+    if (!existing.empty) {
+      alert('Kode undangan sudah digunakan. Pilih kode lain.');
+      btn.disabled = false; btn.textContent = original;
+      return;
+    }
+
+    const joinCode = codeInput;
     const wsRef = await addDoc(collection(db, 'workspaces'), {
       name, ownerUid: state.user.uid, joinCode, driveLink: drive, createdAt: serverTimestamp()
     });
