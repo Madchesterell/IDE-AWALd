@@ -298,11 +298,15 @@
     <div class="modal-content">
         <span class="close-modal" data-close="createWorkspaceModal">&times;</span>
         <h2>Buat Workspace Baru</h2>
-        <p class="subtitle">Anda akan menjadi Mentor di workspace ini.</p>
+        <p class="subtitle">Anda akan menjadi Mentor di workspace ini. Buat kode undangan (password) 6 karakter untuk dibagikan ke anggota.</p>
         <form id="createWorkspaceForm">
             <div class="form-group">
                 <label>Nama Workspace</label>
                 <input type="text" id="newWorkspaceName" required placeholder="Contoh: Tim Animasi SMKN 4">
+            </div>
+            <div class="form-group">
+                <label>Kode Undangan / Password Workspace (6 karakter)</label>
+                <input type="text" id="newWorkspaceCode" required placeholder="Contoh: A1B2C3" maxlength="6" minlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;" pattern="[A-Za-z0-9]{6}" title="Harus 6 karakter huruf/angka">
             </div>
             <div class="form-group">
                 <label>Tautan Google Drive (opsional)</label>
