@@ -91,23 +91,21 @@
         <div class="sidebar-brand">
             <h3>WorkSpace<span>Pro</span></h3>
         </div>
-        <div class="sidebar-menu">
-            <a href="#" class="menu-item active">
-                <span class="menu-icon">▦</span> Dashboard
-            </a>
+        <nav class="sidebar-menu" aria-label="Navigasi utama">
+            <button type="button" id="dashboardNavBtn" class="menu-item active"><span class="menu-icon">▦</span> Dashboard</button>
             <div class="menu-section">
-                <span class="menu-section-title">Manajemen</span>
                 <div class="sidebar-action-buttons">
-                    <button type="button" id="createWorkspaceBtn" class="btn-sidebar-action">
-                        <span class="menu-icon">＋</span> Buat Ruang Kerja
-                    </button>
-                    <button type="button" id="joinWorkspaceBtn" class="btn-sidebar-action secondary">
-                        <span class="menu-icon">↗</span> Gabung Ruang Kerja
-                    </button>
-                    <button type="button" id="accountBtn" class="btn-sidebar-action secondary"><span class="menu-icon">⚙</span> Pengaturan Akun</button>
+                    <button type="button" id="createWorkspaceBtn" class="btn-sidebar-action"><span class="menu-icon">＋</span> Buat Ruang Kerja</button>
+                    <button type="button" id="joinWorkspaceBtn" class="btn-sidebar-action secondary"><span class="menu-icon">↗</span> Gabung Ruang Kerja</button>
+                    <button type="button" id="myWorkspacesNavBtn" class="btn-sidebar-action secondary"><span class="menu-icon">▣</span> Ruang Kerja Saya</button>
                 </div>
             </div>
-        </div>
+            <div class="sidebar-divider" aria-hidden="true"></div>
+            <button type="button" id="notificationsNavBtn" class="menu-item notification-nav-item">
+                <span class="menu-icon">♧</span> Notifikasi
+                <span id="dashboardNotificationBadge" class="sidebar-notification-badge hidden"></span>
+            </button>
+        </nav>
         <div class="sidebar-footer">
             <button type="button" id="logoutBtn" class="btn-logout-sidebar">
                 <span class="menu-icon">→</span> Keluar
@@ -118,7 +116,7 @@
     <!-- Konten Utama Kanan -->
     <div class="main-content-wrapper">
         <header class="dashboard-topbar">
-            <h2 class="topbar-title">Ruang Kerja</h2>
+            <h2 class="topbar-title" id="dashboardPageTitle">Dashboard</h2>
             <div class="user-profile-badge">
                 <span class="avatar-circle" id="userAvatarInitials"></span>
                 <div class="user-info-text">
@@ -129,18 +127,26 @@
         </header>
 
         <main class="dashboard-content">
-            <div class="welcome-alert">
-                <span>Selamat datang kembali. Silakan pilih atau buat ruang kerja untuk memulai.</span>
-            </div>
-
-            <div class="section-header-title" style="margin-bottom: 1rem;">
-                <h3>Ruang Kerja Saya</h3>
-                <p class="subtitle" style="margin:0;">Pilih ruang kerja yang ingin dibuka, atau buat dan gabung ruang kerja baru.</p>
-            </div>
-
-            <div id="workspaceList" class="workspace-grid">
-                <p class="empty-hint">Memuat daftar ruang kerja...</p>
-            </div>
+            <section id="dashboardHomePanel" class="dashboard-panel">
+                <div class="welcome-alert"><span>Selamat datang kembali. Berikut ringkasan aktivitas dan ruang kerja Anda.</span></div>
+                <section class="dashboard-section">
+                    <div class="section-header-title"><h3>Ringkasan Notifikasi</h3><p class="subtitle">Tugas yang membutuhkan tindakan dan tugas yang telah diselesaikan.</p></div>
+                    <div id="dashboardNotificationSummary" class="dashboard-notification-grid"><p class="empty-hint">Memuat ringkasan notifikasi...</p></div>
+                </section>
+                <section class="dashboard-section">
+                    <div class="section-header-title"><h3>Ruang Kerja Saya</h3><p class="subtitle">Akses ruang kerja yang Anda ikuti.</p></div>
+                    <div id="dashboardWorkspacePreview" class="workspace-grid"><p class="empty-hint">Memuat daftar ruang kerja...</p></div>
+                    <button type="button" class="dashboard-text-link" id="viewAllWorkspacesBtn">Lihat semua ruang kerja →</button>
+                </section>
+            </section>
+            <section id="myWorkspacesPanel" class="dashboard-panel hidden">
+                <div class="section-header-title"><h3>Ruang Kerja Saya</h3><p class="subtitle">Pilih ruang kerja yang ingin dibuka, atau buat dan gabung ruang kerja baru.</p></div>
+                <div id="workspaceList" class="workspace-grid"><p class="empty-hint">Memuat daftar ruang kerja...</p></div>
+            </section>
+            <section id="notificationsPanel" class="dashboard-panel hidden">
+                <div class="section-header-title"><h3>Notifikasi</h3><p class="subtitle">Semua tugas yang perlu ditindaklanjuti maupun yang sudah selesai.</p></div>
+                <div id="dashboardNotificationsList" class="dashboard-notifications-list"><p class="empty-hint">Memuat notifikasi...</p></div>
+            </section>
         </main>
     </div>
 </div>
