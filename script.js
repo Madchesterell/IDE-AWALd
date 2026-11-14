@@ -52,7 +52,7 @@ function generateJoinCode() {
 function setLiveStatus(ok) {
   const el = $('liveStatus');
   if (!el) return;
-  el.textContent = ok ? '🟢 Live Sync' : '🔴 Offline';
+  el.textContent = ok ? '● Terhubung' : '● Terputus';
   el.style.color = ok ? '#16a34a' : '#dc2626';
 }
 
@@ -74,7 +74,7 @@ function showWorkspaceView() {
   $('authView').classList.add('hidden');
   $('dashboardView').classList.add('hidden');
   $('workspaceView').classList.remove('hidden');
-  $('workspaceTitle').textContent = state.workspaceName || 'Workspace';
+  $('workspaceTitle').textContent = state.workspaceName || 'Ruang Kerja';
   
   const isMentor = state.role === 'mentor';
   $('mentorNavTabs').classList.toggle('hidden', !isMentor);
@@ -83,7 +83,7 @@ function showWorkspaceView() {
 
   $('roleControls').innerHTML = `
     <span style="font-size:0.8rem;color:var(--text-muted);">
-      ${isMentor ? '👨‍🏫 Mentor / Admin' : '👷 Pekerja'} ·
+      ${isMentor ? 'Mentor / Admin' : 'Anggota'} ·
       <strong>${escapeHtml(state.workerName)}</strong>
     </span>
   `;
@@ -110,14 +110,20 @@ function switchWorkspaceTab(tabName) {
 
 function toggleAuthMode() {
   const isLogin = !$('loginForm').classList.contains('hidden');
-  $('loginForm').classList.toggle('hidden', isLogin);      
-  $('registerForm').classList.toggle('hidden', !isLogin);  
-  $('authTitle').textContent = isLogin ? 'Buat Akun Baru' : 'Selamat Datang';
-  $('authSubtitle').textContent = isLogin
-    ? 'Daftar untuk mulai mengelola workspace Anda.'
-    : 'Masuk untuk mengakses platform evaluasi kinerja karyawan.';
-  $('authToggleText').textContent = isLogin ? 'Sudah punya akun?' : 'Belum punya akun?';
-  $('authToggleLink').textContent = isLogin ? 'Masuk di sini' : 'Daftar sekarang';
+  $('loginForm').classList.toggle('hidden', isLogin);
+  $('registerForm').classList.toggle('hidden', !isLogin);
+  // Pertahankan gaya span biru pada judul
+  if (isLogin) {
+    $('authTitle').innerHTML = 'Buat <span>Akun Baru</span>';
+    $('authSubtitle').textContent = 'Daftar untuk mulai mengelola ruang kerja Anda.';
+    $('authToggleText').textContent = 'Sudah punya akun?';
+    $('authToggleLink').textContent = 'Masuk di sini';
+  } else {
+    $('authTitle').innerHTML = 'Selamat <span>Datang</span>';
+    $('authSubtitle').textContent = 'Masuk untuk mengakses dashboard Anda.';
+    $('authToggleText').textContent = 'Belum punya akun?';
+    $('authToggleLink').textContent = 'Daftar sekarang';
+  }
 }
 
 async function handleLogin(e) {
@@ -179,12 +185,12 @@ async function handleLogout() {
 
 async function loadUserWorkspaces() {
   const list = $('workspaceList');
-  list.innerHTML = '<p class="empty-hint">Memuat workspace...</p>';
+  list.innerHTML = '<p class="empty-hint">Memuat daftar ruang kerja...</p>';
   try {
     const userSnap = await getDoc(doc(db, 'users', state.user.uid));
     const ids = userSnap.exists() ? (userSnap.data().workspaceIds || []) : [];
     if (ids.length === 0) {
-      list.innerHTML = '<p class="empty-hint">Belum ada workspace. Buat atau gabung dulu.</p>';
+      list.innerHTML = '<p class="empty-hint">Belum ada ruang kerja. Silakan buat atau gabung terlebih dahulu.</p>';
       return;
     }
     const workspaces = await Promise.all(ids.map(async id => {
@@ -206,14 +212,14 @@ async function loadUserWorkspaces() {
 function renderWorkspaceList(workspaces) {
   const list = $('workspaceList');
   if (workspaces.length === 0) {
-    list.innerHTML = '<p class="empty-hint">Belum ada workspace.</p>';
+    list.innerHTML = '<p class="empty-hint">Belum ada ruang kerja.</p>';
     return;
   }
   list.innerHTML = workspaces.map(ws => `
     <div class="workspace-card" onclick="openWorkspace('${ws.id}')">
       <div class="workspace-card-header">
         <h3>${escapeHtml(ws.name)}</h3>
-        <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? '👨‍🏫 Mentor' : '👷 Pekerja'}</span>
+        <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span>
       </div>
       ${ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
     </div>
@@ -225,9 +231,9 @@ async function handleCreateWorkspace(e) {
   const name = $('newWorkspaceName').value.trim();
   const codeInput = ($('newWorkspaceCode')?.value || '').trim().toUpperCase();
   const drive = ($('newWorkspaceDrive')?.value || '').trim();
-  if (!name) return alert('Nama workspace wajib diisi.');
-  if (codeInput.length !== 6) return alert('Kode undangan / password harus tepat 6 karakter.');
-  if (!/^[A-Z0-9]{6}$/.test(codeInput)) return alert('Kode hanya boleh huruf dan angka (6 karakter).');
+  if (!name) return alert('Nama ruang kerja wajib diisi.');
+  if (codeInput.length !== 6) return alert('Kode undangan harus tepat 6 karakter.');
+  if (!/^[A-Z0-9]{6}$/.test(codeInput)) return alert('Kode undangan hanya boleh berisi huruf dan angka.');
 
   const btn = $('createWorkspaceSubmitBtn');
   const original = btn.textContent;
@@ -237,7 +243,7 @@ async function handleCreateWorkspace(e) {
     // Cek apakah kode sudah dipakai
     const existing = await getDocs(query(collection(db, 'workspaces'), where('joinCode', '==', codeInput), limit(1)));
     if (!existing.empty) {
-      alert('Kode undangan sudah digunakan. Pilih kode lain.');
+      alert('Kode undangan sudah digunakan. Silakan pilih kode lain.');
       btn.disabled = false; btn.textContent = original;
       return;
     }
@@ -266,7 +272,7 @@ async function handleCreateWorkspace(e) {
     
   } catch (err) {
     console.error(err);
-    alert('Gagal membuat workspace: ' + err.message);
+    alert('Gagal membuat ruang kerja: ' + err.message);
   } finally {
     btn.disabled = false; btn.textContent = original;
   }
@@ -290,7 +296,7 @@ async function handleJoinWorkspace(e) {
     const wsData = wsDoc.data();
 
     const membersSnap = await getDocs(collection(db, 'workspaces', wsDoc.id, 'members'));
-    if (membersSnap.size >= 20) return alert('Workspace sudah penuh (maks 20).');
+    if (membersSnap.size >= 20) return alert('Ruang kerja sudah penuh (maksimal 20 anggota).');
 
     const myName = state.user.displayName || state.user.email.split('@')[0];
     await setDoc(doc(db, 'workspaces', wsDoc.id, 'members', state.user.uid), {
@@ -318,9 +324,9 @@ async function handleJoinWorkspace(e) {
 window.openWorkspace = async (workspaceId) => {
   try {
     const wsSnap = await getDoc(doc(db, 'workspaces', workspaceId));
-    if (!wsSnap.exists()) return alert('Workspace tidak ditemukan.');
+    if (!wsSnap.exists()) return alert('Ruang kerja tidak ditemukan.');
     const memberSnap = await getDoc(doc(db, 'workspaces', workspaceId, 'members', state.user.uid));
-    if (!memberSnap.exists()) return alert('Anda bukan anggota workspace ini.');
+    if (!memberSnap.exists()) return alert('Anda bukan anggota ruang kerja ini.');
 
     state.workspaceId = workspaceId;
     state.workspaceName = wsSnap.data().name;
@@ -329,7 +335,7 @@ window.openWorkspace = async (workspaceId) => {
     showWorkspaceView();
     subscribeToWorkspace();
   } catch (err) {
-    alert('Gagal membuka workspace: ' + err.message);
+    alert('Gagal membuka ruang kerja: ' + err.message);
   }
 };
 
@@ -412,7 +418,7 @@ function updateAssigneeSelect() {
 
 function updateWorkerCount() {
   const el = $('workerCountDisplay');
-  if (el) el.textContent = `Pekerja: ${state.members.filter(m => m.role === 'worker').length} / 20`;
+  if (el) el.textContent = `Anggota: ${state.members.filter(m => m.role === 'worker').length} / 20`;
 }
 
 function updateDriveStatus() {
