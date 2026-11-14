@@ -791,7 +791,7 @@ function setupEventListeners() {
 
 function init() {
   setDefaultDates();
-  setupEventListeners();   // ← panggil SEKALI di sini
+  setupEventListeners();
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -802,7 +802,7 @@ function init() {
         initialsEl.textContent = nameSource.substring(0, 2).toUpperCase();
       }
 
-      // ensureUserDoc dulu, baru tampilkan dashboard (lihat Bug #2)
+      // Memastikan dokumen user ada, lalu tampilkan dashboard
       ensureUserDoc(user)
         .catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err))
         .finally(() => showDashboardView());
@@ -812,8 +812,7 @@ function init() {
       showAuthView();
     }
   });
-}
-}
+} // <-- Kurung kurawal penutup untuk fungsi init() yang tepat
 
 async function ensureUserDoc(user) {
   try {
