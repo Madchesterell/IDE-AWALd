@@ -13,22 +13,28 @@
 <div id="authView" class="auth-gate-modal">
     <div class="auth-card">
         <div class="auth-brand">
-            <h1>WorkSpace<span>Pro</span></h1>
+            <span class="brand-badge">Workspace Pro</span>
         </div>
-        <h2 id="authTitle">Selamat Datang</h2>
-        <p class="subtitle" id="authSubtitle">Masuk untuk mengakses platform evaluasi kinerja karyawan.</p>
+        <h2 class="auth-title" id="authTitle">Selamat <span>Datang</span></h2>
+        <p class="auth-subtitle" id="authSubtitle">Masuk untuk mengakses halaman dashboard anda.</p>
 
         <!-- LOGIN FORM -->
         <form id="loginForm" class="auth-form">
             <div class="form-group">
                 <label>Alamat Email</label>
-                <input type="email" id="loginEmail" required placeholder="nama@perusahaan.com">
+                <input type="email" id="loginEmail" required placeholder="nama email anda">
             </div>
             <div class="form-group">
                 <label>Kata Sandi</label>
                 <input type="password" id="loginPassword" required placeholder="Masukkan kata sandi" minlength="6">
             </div>
-            <button type="submit" class="btn-primary" id="loginBtn">Masuk ke Dashboard</button>
+            <div class="auth-options">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe"> Ingat saya
+                </label>
+                <a href="#" class="forgot-password">Lupa kata sandi?</a>
+            </div>
+            <button type="submit" class="btn-primary-blue" id="loginBtn">Masuk ke Dashboard</button>
         </form>
 
         <!-- REGISTER FORM (hidden default) -->
@@ -39,16 +45,25 @@
             </div>
             <div class="form-group">
                 <label>Alamat Email</label>
-                <input type="email" id="registerEmail" required placeholder="nama@perusahaan.com">
+                <input type="email" id="registerEmail" required placeholder="nama email anda">
             </div>
             <div class="form-group">
                 <label>Kata Sandi</label>
                 <input type="password" id="registerPassword" required placeholder="Minimal 6 karakter" minlength="6">
             </div>
-            <button type="submit" class="btn-primary" id="registerBtn">Daftar Akun</button>
+            <button type="submit" class="btn-primary-blue" id="registerBtn">Daftar Akun</button>
         </form>
 
-        <p class="auth-toggle">
+        <div class="divider-container">
+            <span>Atau</span>
+        </div>
+
+        <button type="button" class="btn-google">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.95H1.2v3.14C3.21 21.36 7.34 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.25c-.25-.72-.38-1.49-.38-2.25s.13-1.53.38-2.25V6.61H1.2C.43 8.15 0 9.88 0 12s.43 3.85 1.2 5.39l4.08-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.21 2.64 1.2 6.61l4.08 3.14c.95-2.84 3.6-4.95 6.72-4.95z"/></svg>
+            Masuk dengan Google
+        </button>
+
+        <p class="auth-footer">
             <span id="authToggleText">Belum punya akun?</span>
             <a href="#" id="authToggleLink">Daftar sekarang</a>
         </p>
