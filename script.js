@@ -38,11 +38,17 @@ let state = {
 let unsubscribers = [];
 let dashboardWorkspaces = [];
 let dashboardNotifications = [];
+
 const $ = (id) => document.getElementById(id);
 
 function escapeHtml(str) {
-  return String(str || '').replace(/[&<>"']/g, c =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return String(str || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
 }
 
 function safeUrl(u) {
@@ -56,14 +62,22 @@ function dueDiff(t) {
   if (!t.endDate) return null;
   return (new Date(t.endDate + 'T23:59:59') - new Date()) / 864e5;
 }
-function dueSoon(t) { const d = dueDiff(t); return t.status !== 'done' && d !== null && d >= 0 && d <= 2; }
+
+function dueSoon(t) {
+  const d = dueDiff(t);
+  return t.status !== 'done' && d !== null && d >= 0 && d <= 2;
+}
+
 const needsAction = (t, role, name) => role === 'mentor'
   ? t.status === 'review'
   : t.assignee === name && (t.status === 'todo' || (t.status === 'progress' && t.revisionNotes));
 
 function applyTaskFilters(list) {
   const q = ($('taskSearch')?.value || '').trim().toLowerCase();
-  const st = $('filterStatus')?.value, df = $('filterDifficulty')?.value, du = $('filterDue')?.value, as = $('filterAssignee')?.value;
+  const st = $('filterStatus')?.value;
+  const df = $('filterDifficulty')?.value;
+  const du = $('filterDue')?.value;
+  const as = $('filterAssignee')?.value;
   return list.filter(t => {
     if (q && !((t.title || '') + ' ' + (t.desc || '')).toLowerCase().includes(q)) return false;
     if (st && t.status !== st) return false;
@@ -78,18 +92,28 @@ function applyTaskFilters(list) {
 }
 
 function updateTaskBadge() {
-  const el = $('taskBadge'); if (!el) return;
+  const el = $('taskBadge');
+  if (!el) return;
   const n = state.tasks.filter(t => needsAction(t, state.role, state.workerName)).length;
-  el.textContent = n; el.classList.toggle('hidden', n === 0);
+  el.textContent = n;
+  el.classList.toggle('hidden', n === 0);
   el.title = state.role === 'mentor' ? 'Menunggu dinilai' : 'Perlu dikerjakan / direvisi';
 }
 
 function summarizeTasks(tasks, role, myName) {
   const mine = role === 'worker' ? tasks.filter(t => t.assignee === myName) : tasks;
   const c = { todo: 0, progress: 0, review: 0, done: 0, overdue: 0 };
-  mine.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; const d = dueDiff(t); if (t.status !== 'done' && d !== null && d < 0) c.overdue++; });
+  mine.forEach(t => {
+    c[t.status] = (c[t.status] || 0) + 1;
+    const d = dueDiff(t);
+    if (t.status !== 'done' && d !== null && d < 0) c.overdue++;
+  });
   const byMember = {};
-  if (role === 'mentor') tasks.forEach(t => { const m = byMember[t.assignee] = byMember[t.assignee] || { done: 0, total: 0 }; m.total++; if (t.status === 'done') m.done++; });
+  if (role === 'mentor') tasks.forEach(t => {
+    const m = byMember[t.assignee] = byMember[t.assignee] || { done: 0, total: 0 };
+    m.total++;
+    if (t.status === 'done') m.done++;
+  });
   return { c, total: mine.length, byMember, action: tasks.filter(t => needsAction(t, role, myName)).length };
 }
 
@@ -97,10 +121,15 @@ function wsStatsHtml(ws) {
   if (!ws.stats) return '';
   const { c, byMember, action } = ws.stats;
   const members = Object.entries(byMember).slice(0, 5).map(([n, m]) =>
-    `<div class="mini-progress"><span>${escapeHtml(n)}</span><div class="bar"><i style="width:${m.total ? Math.round(m.done / m.total * 100) : 0}%"></i></div><small>${m.done}/${m.total}</small></div>`).join('');
+    `<div class="mini-progress"><span>${escapeHtml(n)}</span><div class="bar"><i style="width:${m.total ? Math.round(m.done / m.total * 100) : 0}%"></i></div><small>${m.done}/${m.total}</small></div>`
+  ).join('');
   return `<div class="ws-stats">
     ${action ? `<span class="action-badge">${action} perlu tindakan</span>` : ''}
-    <span class="stat">${c.todo} Belum</span><span class="stat s-progress">${c.progress} Berjalan</span><span class="stat s-review">${c.review} Dinilai</span><span class="stat s-done">${c.done} Selesai</span>${c.overdue ? `<span class="stat s-late">${c.overdue} Terlambat</span>` : ''}
+    <span class="stat">${c.todo} Belum</span>
+    <span class="stat s-progress">${c.progress} Berjalan</span>
+    <span class="stat s-review">${c.review} Dinilai</span>
+    <span class="stat s-done">${c.done} Selesai</span>
+    ${c.overdue ? `<span class="stat s-late">${c.overdue} Terlambat</span>` : ''}
   </div>${members ? `<div class="ws-members-progress">${members}</div>` : ''}`;
 }
 
@@ -128,7 +157,7 @@ function showDashboardView() {
   $('workspaceView').classList.add('hidden');
   $('userEmailDisplay').textContent = state.user?.displayName || state.user?.email || '';
   const initials = (state.user?.displayName || state.user?.email || 'WP')
-    .split(/[\\s@._-]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
+    .split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
   if ($('userAvatarInitials')) $('userAvatarInitials').textContent = initials || 'WP';
   loadUserWorkspaces();
   switchDashboardSection('home');
@@ -164,9 +193,19 @@ function renderDashboardNotifications() {
   if (badge) { badge.textContent = actions.length; badge.classList.toggle('hidden', actions.length === 0); }
   if (summary) {
     summary.innerHTML = `
-      <button type="button" class="notification-summary-card needs-action" data-open-notifications><span class="notification-summary-icon">◷</span><span><strong>${actions.length}</strong><small>Perlu tindakan</small></span></button>
-      <button type="button" class="notification-summary-card completed" data-open-notifications><span class="notification-summary-icon">✓</span><span><strong>${completed.length}</strong><small>Selesai</small></span></button>`;
-    summary.querySelectorAll('[data-open-notifications]').forEach(button => button.addEventListener('click', () => switchDashboardSection('notifications')));
+      <div class="dashboard-notification-grid">
+        <button type="button" class="notification-summary-card needs-action" data-open-notifications>
+          <span class="notification-summary-icon">◷</span>
+          <span><strong>${actions.length}</strong><small>Perlu tindakan</small></span>
+        </button>
+        <button type="button" class="notification-summary-card completed" data-open-notifications>
+          <span class="notification-summary-icon">✓</span>
+          <span><strong>${completed.length}</strong><small>Selesai</small></span>
+        </button>
+      </div>`;
+    summary.querySelectorAll('[data-open-notifications]').forEach(button =>
+      button.addEventListener('click', () => switchDashboardSection('notifications'))
+    );
   }
   if (!list) return;
   if (!dashboardNotifications.length) {
@@ -176,10 +215,13 @@ function renderDashboardNotifications() {
   list.innerHTML = dashboardNotifications.map(item => `
     <article class="dashboard-notification-item">
       <span class="notification-status-dot ${item.kind === 'done' ? 'is-done' : 'is-action'}"></span>
-      <div class="dashboard-notification-copy"><strong>${escapeHtml(item.title || 'Tugas tanpa judul')}</strong>
-      <p>${escapeHtml(item.workspaceName)} · ${item.kind === 'done' ? 'Tugas selesai' : (item.role === 'mentor' ? 'Menunggu penilaian' : 'Perlu tindakan')}</p></div>
+      <div class="dashboard-notification-copy">
+        <strong>${escapeHtml(item.title || 'Tugas tanpa judul')}</strong>
+        <p>${escapeHtml(item.workspaceName)} · ${item.kind === 'done' ? 'Tugas selesai' : (item.role === 'mentor' ? 'Menunggu penilaian' : 'Perlu tindakan')}</p>
+      </div>
       <span class="notification-kind ${item.kind}">${item.kind === 'done' ? 'Selesai' : 'Perlu tindakan'}</span>
-    </article>`).join('');
+    </article>
+  `).join('');
 }
 
 function showWorkspaceView() {
@@ -187,24 +229,15 @@ function showWorkspaceView() {
   $('dashboardView').classList.add('hidden');
   $('workspaceView').classList.remove('hidden');
   $('workspaceTitle').textContent = state.workspaceName || 'Ruang Kerja';
-
   const isMentor = state.role === 'mentor';
   const divTab = $('tabDivisionView');
   if (divTab) divTab.classList.toggle('hidden', !isMentor);
-
   const taskLabel = $('tabTaskLabel');
   if (taskLabel) taskLabel.textContent = isMentor ? 'Papan Tugas' : 'Tugas Saya';
-
   $('mentorPanel').classList.toggle('hidden', !isMentor);
+  $('mentorTaskCreator').classList.toggle('hidden', !isMentor);
   $('workerDailyGoalBox').classList.toggle('hidden', isMentor);
-
-  $('roleControls').innerHTML = `
-    <span style="font-size:0.8rem;color:var(--text-muted);">
-      ${isMentor ? 'Mentor / Admin' : 'Anggota'} ·
-      <strong>${escapeHtml(state.workerName)}</strong>
-    </span>
-  `;
-
+  $('roleControls').innerHTML = `<span style="font-size:0.8rem;color:var(--text-muted);"> ${isMentor ? 'Mentor / Admin' : 'Anggota'} · <strong>${escapeHtml(state.workerName)}</strong> </span>`;
   switchWorkspaceTab('task');
 }
 
@@ -214,19 +247,13 @@ function switchWorkspaceTab(tabName) {
   if (tabName === 'task') {
     $('mainTaskContainer').classList.remove('hidden');
     $('divisionManagementPanel').classList.add('hidden');
-    if (taskBtn) { taskBtn.classList.add('active');  }
-    if (divBtn) { divBtn.classList.remove('active');  }
+    if (taskBtn) taskBtn.classList.add('active');
+    if (divBtn) divBtn.classList.remove('active');
   } else {
     $('mainTaskContainer').classList.add('hidden');
     $('divisionManagementPanel').classList.remove('hidden');
-    if (taskBtn) { taskBtn.classList.remove('active'); }
-    if (divBtn) { divBtn.classList.add('active'); }
-  }
-}
-
-    $('divisionManagementPanel').classList.remove('hidden');
-    if (taskBtn) { taskBtn.classList.remove('active');  }
-    if (divBtn) { divBtn.classList.add('active');  }
+    if (taskBtn) taskBtn.classList.remove('active');
+    if (divBtn) divBtn.classList.add('active');
     renderDivisionManagement();
   }
 }
@@ -238,13 +265,9 @@ function toggleAuthMode() {
   if (isLogin) {
     $('authTitle').innerHTML = 'Buat <span>Akun Baru</span>';
     $('authSubtitle').textContent = 'Daftar untuk mulai mengelola ruang kerja Anda.';
-    $('authToggleText').textContent = 'Sudah punya akun?';
-    $('authToggleLink').textContent = 'Masuk di sini';
   } else {
     $('authTitle').innerHTML = 'Selamat <span>Datang</span>';
     $('authSubtitle').textContent = 'Masuk untuk mengakses dashboard Anda.';
-    $('authToggleText').textContent = 'Belum punya akun?';
-    $('authToggleLink').textContent = 'Daftar sekarang';
   }
 }
 
@@ -350,13 +373,16 @@ async function loadUserWorkspaces() {
 function renderWorkspaceList(workspaces) {
   const cardMarkup = (ws, preview = false) => `
     <div class="workspace-card" role="button" tabindex="0" onclick="openWorkspace('${ws.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWorkspace('${ws.id}')}">
-      <div class="workspace-card-header"><h3>${escapeHtml(ws.name)}</h3><span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></div>
+      <div class="workspace-card-header">
+        <h3>${escapeHtml(ws.name)}</h3>
+        <span class="role-badge ${ws.role}">${ws.role === 'mentor' ? 'Mentor' : 'Anggota'}</span>
+      </div>
       ${!preview && ws.role === 'mentor' ? `<p class="join-code">Kode undangan: <strong>${escapeHtml(ws.joinCode || '-')}</strong></p>` : ''}
       ${wsStatsHtml(ws)}
     </div>`;
   const empty = '<p class="empty-hint">Belum ada ruang kerja. Silakan buat atau gabung terlebih dahulu.</p>';
-  if ($('workspaceList')) $('workspaceList').innerHTML = workspaces.length ? workspaces.map(ws => cardMarkup(ws)).join('') : empty;
-  if ($('dashboardWorkspacePreview')) $('dashboardWorkspacePreview').innerHTML = workspaces.length ? workspaces.slice(0, 3).map(ws => cardMarkup(ws, true)).join('') : empty;
+  if ($('workspaceList')) $('workspaceList').innerHTML = workspaces.length ? `<div class="workspace-grid">${workspaces.map(ws => cardMarkup(ws)).join('')}</div>` : empty;
+  if ($('dashboardWorkspacePreview')) $('dashboardWorkspacePreview').innerHTML = workspaces.length ? `<div class="workspace-grid">${workspaces.slice(0, 3).map(ws => cardMarkup(ws, true)).join('')}</div>` : empty;
 }
 
 async function handleCreateWorkspace(e) {
@@ -366,11 +392,9 @@ async function handleCreateWorkspace(e) {
   const drive = ($('newWorkspaceDrive')?.value || '').trim();
   if (!name) return alert('Nama ruang kerja wajib diisi.');
   if (codeInput.length !== 6) return alert('Kode undangan harus tepat 6 karakter.');
-
   const btn = $('createWorkspaceSubmitBtn');
   const original = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ Membuat...';
-
   try {
     const existing = await getDocs(query(collection(db, 'workspaces'), where('joinCode', '==', codeInput), limit(1)));
     if (!existing.empty) {
@@ -378,7 +402,6 @@ async function handleCreateWorkspace(e) {
       btn.disabled = false; btn.textContent = original;
       return;
     }
-
     const joinCode = codeInput;
     const uid = state.user.uid;
     const mentorName = state.user.displayName || 'Mentor';
@@ -392,7 +415,6 @@ async function handleCreateWorkspace(e) {
     });
     batch.set(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsRef.id) }, { merge: true });
     await batch.commit();
-
     state.workspaceId = wsRef.id;
     state.workspaceName = name;
     state.role = 'mentor';
@@ -401,7 +423,6 @@ async function handleCreateWorkspace(e) {
     $('createWorkspaceForm').reset();
     showWorkspaceView();
     subscribeToWorkspace();
-
   } catch (err) {
     console.error(err);
     alert('Gagal membuat ruang kerja: ' + err.message);
@@ -414,28 +435,21 @@ async function handleJoinWorkspace(e) {
   e.preventDefault();
   const code = $('joinCodeInput').value.trim().toUpperCase();
   if (code.length !== 6) return alert('Kode harus 6 karakter.');
-
   const btn = $('joinWorkspaceSubmitBtn');
   const original = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ Mencari...';
-
   try {
-    const snap = await getDocs(query(collection(db, 'workspaces'),
-      where('joinCode', '==', code), limit(1)));
+    const snap = await getDocs(query(collection(db, 'workspaces'), where('joinCode', '==', code), limit(1)));
     if (snap.empty) return alert('Kode undangan tidak valid.');
-
     const wsDoc = snap.docs[0];
     const wsData = wsDoc.data();
-
     const uid = state.user.uid;
     const myMemberRef = doc(db, 'workspaces', wsDoc.id, 'members', uid);
     const existingMe = await getDoc(myMemberRef);
     const myName = state.user.displayName || state.user.email.split('@')[0];
     let myRole = 'worker';
     let finalName = myName;
-
     if (existingMe.exists()) {
-      // Sudah anggota: jangan timpa peran/divisi, langsung buka
       myRole = existingMe.data().role || 'worker';
       finalName = existingMe.data().name || myName;
       await setDoc(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
@@ -444,13 +458,12 @@ async function handleJoinWorkspace(e) {
       const workerCount = membersSnap.docs.filter(d => d.data().role === 'worker').length;
       if (workerCount >= 20) { alert('Ruang kerja sudah penuh (maksimal 20 anggota).'); return; }
       const batch = writeBatch(db);
-            batch.set(myMemberRef, {
+      batch.set(myMemberRef, {
         uid, email: state.user.email, name: myName, role: 'worker', division: 'Umum', joinedAt: serverTimestamp()
       });
       batch.set(doc(db, 'users', uid), { workspaceIds: arrayUnion(wsDoc.id) }, { merge: true });
       await batch.commit();
     }
-
     state.workspaceId = wsDoc.id;
     state.workspaceName = wsData.name;
     state.role = myRole;
@@ -473,7 +486,6 @@ window.openWorkspace = async (workspaceId) => {
     if (!wsSnap.exists()) return alert('Ruang kerja tidak ditemukan.');
     const memberSnap = await getDoc(doc(db, 'workspaces', workspaceId, 'members', state.user.uid));
     if (!memberSnap.exists()) return alert('Anda bukan anggota ruang kerja ini.');
-
     state.workspaceId = workspaceId;
     state.workspaceName = wsSnap.data().name;
     state.role = memberSnap.data().role;
@@ -558,11 +570,7 @@ function subscribeToWorkspace() {
 function renderMembers() {
   const list = $('workerList');
   if (!list) return;
-  list.innerHTML = state.members.map(m => `
-    <li class="worker-tag">
-      ${escapeHtml(m.name)} (${escapeHtml(m.division || 'Umum')}) ${m.role === 'mentor' ? '👨‍🏫' : ''}
-    </li>
-  `).join('') || '<li class="empty-hint">Belum ada anggota.</li>';
+  list.innerHTML = state.members.map(m => `<li class="worker-tag"> ${escapeHtml(m.name)} (${escapeHtml(m.division || 'Umum')}) ${m.role === 'mentor' ? '👨‍🏫' : ''} </li>`).join('') || '<li class="empty-hint">Belum ada anggota.</li>';
 }
 
 function updateAssigneeSelect() {
@@ -573,7 +581,8 @@ function updateAssigneeSelect() {
   if (fa) {
     const pv = fa.value;
     fa.innerHTML = '<option value="">Semua anggota</option>' + workers.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
-    fa.value = pv; fa.classList.toggle('hidden', state.role !== 'mentor');
+    fa.value = pv;
+    fa.classList.toggle('hidden', state.role !== 'mentor');
   }
   const prev = select.value;
   select.innerHTML = workers.length
@@ -587,15 +596,12 @@ function updateWorkerCount() {
   if (el) el.textContent = `Anggota: ${state.members.filter(m => m.role === 'worker').length} / 20`;
 }
 
-// Fitur Baru: Memverifikasi nilai input Google Drive secara real-time
 function updateDriveStatus(liveValue = null) {
   const statusEl = $('driveStatusText');
   const inputEl = $('driveLinkInput');
   if (!statusEl) return;
-
   const currentVal = liveValue !== null ? liveValue.trim() : (state.driveLink || '').trim();
   const savedVal = (state.driveLink || '').trim();
-
   if (!currentVal) {
     statusEl.textContent = 'Belum ada folder yang tertaut.';
     statusEl.classList.remove('linked');
@@ -608,7 +614,6 @@ function updateDriveStatus(liveValue = null) {
       : '⚠️ Tautan tidak valid (harus diawali http:// atau https://)';
     statusEl.classList.add('linked');
   }
-
   if (liveValue === null && inputEl && document.activeElement !== inputEl) {
     inputEl.value = savedVal;
   }
@@ -624,59 +629,39 @@ function renderDivisionOptions() {
 function renderTasks() {
   const tbody = $('taskTableBody');
   if (!tbody) return;
-
   let filteredTasks = state.tasks;
   if (state.role === 'worker') {
     filteredTasks = state.tasks.filter(t => t.assignee === state.workerName);
   }
-
   updateTaskBadge();
   filteredTasks = applyTaskFilters(filteredTasks);
   if (filteredTasks.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">Belum ada tugas dalam daftar.</td></tr>`;
     return;
   }
-
   tbody.innerHTML = filteredTasks.map(task => {
     const isSoon = dueSoon(task);
     const isOverdue = task.endDate && new Date(task.endDate + 'T23:59:59') < new Date() && task.status !== 'done';
     const isWorker = state.role === 'worker';
     const isMentor = state.role === 'mentor';
-
     const canStart = isWorker && task.status === 'todo' && task.assignee === state.workerName;
     const canReport = isWorker && task.status === 'progress' && task.assignee === state.workerName;
     const canValidate = isMentor && task.status === 'review';
     const canReopen = isMentor && task.status === 'done';
-
     const driveHref = safeUrl(task.reportFileLink);
     const driveIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-
-    let statusBg = '#f3f4f6';
-    let statusColor = '#374151';
-    let statusText = 'Belum Mulai';
+    let statusBg = '#f3f4f6', statusColor = '#374151', statusText = 'Belum Mulai';
     if (task.status === 'progress') { statusBg = '#dbeafe'; statusColor = '#1e40af'; statusText = 'Berjalan'; }
     else if (task.status === 'review') { statusBg = '#f3e8ff'; statusColor = '#6b21a8'; statusText = 'Dinilai'; }
     else if (task.status === 'done') { statusBg = '#dcfce7'; statusColor = '#15803d'; statusText = 'Selesai'; }
-
     let diffBg = '#fef3c7', diffColor = '#92400e', diffText = 'Sedang';
     const diffRaw = (task.difficulty || '').toLowerCase();
-    if (diffRaw === 'tinggi' || diffRaw === 'high') {
-      diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi';
-    } else if (diffRaw === 'rendah' || diffRaw === 'low') {
-      diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah';
-          } else if (diffRaw === 'sedang' || diffRaw === 'medium') {
-      diffBg = '#fef3c7'; diffColor = '#92400e'; diffText = 'Sedang';
-    } else {
-      const kpiVal = Number(task.kpi) || 10;
-      if (kpiVal > 15) { diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi'; }
-      else if (kpiVal < 8) { diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah'; }
-    }
-
+    if (diffRaw === 'tinggi' || diffRaw === 'high') { diffBg = '#fee2e2'; diffColor = '#991b1b'; diffText = 'Tinggi'; }
+    else if (diffRaw === 'rendah' || diffRaw === 'low') { diffBg = '#e0f2fe'; diffColor = '#0369a1'; diffText = 'Rendah'; }
+    else if (diffRaw === 'sedang' || diffRaw === 'medium') { diffBg = '#fef3c7'; diffColor = '#92400e'; diffText = 'Sedang'; }
     return `
       <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='transparent'">
-        <td style="padding: 14px 16px;">
-          <div class="task-title">${escapeHtml(task.title)}</div>
-        </td>
+        <td style="padding: 14px 16px;"><div class="task-title">${escapeHtml(task.title)}</div></td>
         <td class="task-desc-cell" style="padding: 14px 16px;">
           <div class="task-desc${task.desc ? '' : ' empty'}">${escapeHtml(task.desc || 'Tanpa keterangan tambahan')}</div>
           ${task.revisionNotes ? `<div class="task-revision">⚠️ Revisi: ${escapeHtml(task.revisionNotes)}</div>` : ''}
@@ -739,22 +724,20 @@ function renderDivisionManagement() {
     divListContainer.innerHTML = state.divisions.length === 0 ? '<p class="empty-hint">Belum ada divisi terdaftar.</p>' :
       state.divisions.map(d => {
         const countEmp = state.members.filter(m => m.division === d.name).length;
-        return `
-          <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #fff;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <h4 style="margin: 0; font-size: 1rem; color: #1f2937;">${escapeHtml(d.name)}</h4>
-                <p style="margin: 4px 0 8px 0; font-size: 0.8rem; color: #6b7280;">${escapeHtml(d.desc || 'Tidak ada deskripsi.')}</p>
-              </div>
-              <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${countEmp} Anggota</span>
+        return `<div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #fff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h4 style="margin: 0; font-size: 1rem; color: #1f2937;">${escapeHtml(d.name)}</h4>
+              <p style="margin: 4px 0 8px 0; font-size: 0.8rem; color: #6b7280;">${escapeHtml(d.desc || 'Tidak ada deskripsi.')}</p>
             </div>
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-              <button class="btn-sm btn-warning" onclick="deleteDivision('${d.id}')" style="font-size: 0.7rem;">Hapus</button>
-            </div>
-          </div>`;
+            <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${countEmp} Anggota</span>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn-sm btn-warning" onclick="deleteDivision('${d.id}')" style="font-size: 0.7rem;">Hapus</button>
+          </div>
+        </div>`;
       }).join('');
   }
-
   const tableBody = $('memberSettingsTableBody');
   if (tableBody) {
     tableBody.innerHTML = state.members.map(m => `
@@ -763,7 +746,10 @@ function renderDivisionManagement() {
         <td style="padding: 10px; color: #6b7280; font-size: 0.85rem;">${escapeHtml(m.email)}</td>
         <td class="col-center" style="padding: 10px;"><span class="role-badge ${m.role}">${m.role === 'mentor' ? 'Mentor' : 'Anggota'}</span></td>
         <td style="padding: 10px; font-size: 0.85rem;">${escapeHtml(m.division || 'Umum')}</td>
-        <td class="col-center" style="padding: 10px;"><button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button>${m.id !== state.user.uid ? ` <button class="btn-sm btn-warning" onclick="removeMember('${m.id}')">Keluarkan</button>` : ''}</td>
+        <td class="col-center" style="padding: 10px;">
+          <button class="btn-sm" onclick="openEditMemberModal('${m.id}')">Edit</button>
+          ${m.id !== state.user.uid ? `<button class="btn-sm btn-warning" onclick="removeMember('${m.id}')">Keluarkan</button>` : ''}
+        </td>
       </tr>`).join('');
   }
 }
@@ -798,9 +784,11 @@ window.openEditTaskModal = (id) => {
   sel.innerHTML = state.members.filter(m => m.role === 'worker').map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
   if (![...sel.options].some(o => o.value === t.assignee)) sel.insertAdjacentHTML('afterbegin', `<option value="${escapeHtml(t.assignee)}">${escapeHtml(t.assignee)}</option>`);
   sel.value = t.assignee;
-  $('editTaskId').value = id; $('editTaskTitle').value = t.title || '';
+  $('editTaskId').value = id;
+  $('editTaskTitle').value = t.title || '';
   $('editTaskDifficulty').value = (t.difficulty || 'sedang').toLowerCase();
-  $('editTaskStart').value = t.startDate || ''; $('editTaskEnd').value = t.endDate || '';
+  $('editTaskStart').value = t.startDate || '';
+  $('editTaskEnd').value = t.endDate || '';
   $('editTaskDesc').value = t.desc || '';
   $('editTaskModal').classList.remove('hidden');
 };
@@ -817,7 +805,10 @@ window.openHistoryModal = (id) => {
   $('historyTitle').textContent = t.title;
   $('historyList').innerHTML = [...(t.history || [])].sort((a, b) => b.at - a.at).map(h => `
     <div class="hist-item hist-${escapeHtml(h.type)}">
-      <div class="hist-head"><strong>${label[h.type] || escapeHtml(h.type)}</strong> · ${escapeHtml(h.by || '')}<span>${new Date(h.at).toLocaleString('id-ID')}</span></div>
+      <div class="hist-head">
+        <strong>${label[h.type] || escapeHtml(h.type)}</strong> · ${escapeHtml(h.by || '')}
+        <span>${new Date(h.at).toLocaleString('id-ID')}</span>
+      </div>
       ${h.text ? `<div>${escapeHtml(h.text)}</div>` : ''}
       ${safeUrl(h.link) ? `<a href="${escapeHtml(safeUrl(h.link))}" target="_blank" rel="noopener noreferrer">🔗 Buka file</a>` : ''}
     </div>`).join('') || '<p class="empty-hint">Belum ada riwayat.</p>';
@@ -905,7 +896,7 @@ window.moveTask = async (taskId, newStatus) => {
   const t = state.tasks.find(x => x.id === taskId);
   if (!t) return;
   const ok = (state.role === 'worker' && t.assignee === state.workerName && t.status === 'todo' && newStatus === 'progress')
-          || (state.role === 'mentor' && t.status === 'done' && newStatus === 'review');
+    || (state.role === 'mentor' && t.status === 'done' && newStatus === 'review');
   if (!ok) return alert('Perubahan status ini tidak diizinkan.');
   try {
     await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
@@ -919,33 +910,25 @@ window.openReportModal = (taskId) => {
   const task = state.tasks.find(t => t.id === taskId);
   const container = $('reportDriveContainer');
   const subtitle = $('reportModalSubtitle');
-
   if (task && task.driveSource === 'workspace') {
     subtitle.textContent = "Unggah file Anda ke folder Google Drive Utama yang disediakan Mentor.";
     container.innerHTML = `
       <label>Tautan Folder Google Drive Utama Ruang Kerja</label>
       <div style="padding: 10px; background: rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 8px;">
-        ${safeUrl(state.driveLink) ? `
-          <a href="${escapeHtml(safeUrl(state.driveLink))}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600; text-decoration: underline;">
-            📂 Buka Folder Drive Utama Ruang Kerja
-          </a>
-          <input type="hidden" id="reportDriveLink" value="${escapeHtml(state.driveLink)}">
-        ` : `
-          <span style="color: #dc2626; font-size: 0.85rem;">⚠️ Mentor belum mengatur Link Google Drive Utama. Silakan masukkan link manual:</span>
-          <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required style="margin-top:5px;">
-        `}
+        ${safeUrl(state.driveLink)
+          ? `<a href="${escapeHtml(safeUrl(state.driveLink))}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600; text-decoration: underline;">📂 Buka Folder Drive Utama Ruang Kerja</a>
+             <input type="hidden" id="reportDriveLink" value="${escapeHtml(state.driveLink)}">`
+          : `<span style="color: #dc2626; font-size: 0.85rem;">⚠️ Mentor belum mengatur Link Google Drive Utama. Silakan masukkan link manual:</span>
+             <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required style="margin-top:5px;">`}
       </div>
-      <small style="color: var(--text-muted);">Masukkan file ke folder di atas, lalu tulis catatan dan kirim laporan.</small>
-    `;
+      <small style="color: var(--text-muted);">Masukkan file ke folder di atas, lalu tulis catatan dan kirim laporan.</small>`;
   } else {
     subtitle.textContent = "Masukkan tautan Google Drive khusus untuk file tugas ini.";
     container.innerHTML = `
       <label for="reportDriveLink">Tautan File Google Drive Tugas</label>
       <input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required />
-      <small style="color: var(--text-muted); font-size: 0.75rem;">Tempelkan tautan file atau folder tugas yang sudah diunggah ke Drive.</small>
-    `;
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Tempelkan tautan file atau folder tugas yang sudah diunggah ke Drive.</small>`;
   }
-
   $('reportModal').classList.remove('hidden');
 };
 
@@ -966,8 +949,9 @@ function setupEventListeners() {
   $('loginForm').addEventListener('submit', handleLogin);
   $('registerForm').addEventListener('submit', handleRegister);
   $('authToggleLink').addEventListener('click', (e) => { e.preventDefault(); toggleAuthMode(); });
+  const authToggleLink2 = $('authToggleLink2');
+  if (authToggleLink2) authToggleLink2.addEventListener('click', (e) => { e.preventDefault(); toggleAuthMode(); });
   $('logoutBtn').addEventListener('click', handleLogout);
-
   $('googleLoginBtn').addEventListener('click', async () => {
     try { await signInWithPopup(auth, new GoogleAuthProvider()); }
     catch (err) {
@@ -976,7 +960,6 @@ function setupEventListeners() {
       }
     }
   });
-
   $('forgotPasswordLink').addEventListener('click', async (e) => {
     e.preventDefault();
     const email = $('loginEmail').value.trim();
@@ -986,7 +969,6 @@ function setupEventListeners() {
       alert('Tautan reset kata sandi dikirim ke ' + email + '.');
     } catch (err) { alert('Gagal: ' + mapAuthError(err.code)); }
   });
-
   $('createWorkspaceBtn').addEventListener('click', () => $('createWorkspaceModal').classList.remove('hidden'));
   $('joinWorkspaceBtn').addEventListener('click', () => $('joinWorkspaceModal').classList.remove('hidden'));
   $('dashboardNavBtn').addEventListener('click', () => switchDashboardSection('home'));
@@ -996,22 +978,15 @@ function setupEventListeners() {
   $('createWorkspaceForm').addEventListener('submit', handleCreateWorkspace);
   $('joinWorkspaceForm').addEventListener('submit', handleJoinWorkspace);
   $('backToDashboardBtn').addEventListener('click', backToDashboard);
-
   $('tabTaskView').addEventListener('click', () => switchWorkspaceTab('task'));
   $('tabDivisionView').addEventListener('click', () => switchWorkspaceTab('division'));
-
   document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $(btn.dataset.close).classList.add('hidden');
-    });
+    btn.addEventListener('click', () => { $(btn.dataset.close).classList.add('hidden'); });
   });
   document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.add('hidden');
-    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
   });
 
-  // Tombol simpan link drive
   if ($('saveDriveBtn')) {
     $('saveDriveBtn').addEventListener('click', async () => {
       const link = ($('driveLinkInput')?.value || '').trim();
@@ -1021,30 +996,24 @@ function setupEventListeners() {
         await updateDoc(doc(db, 'workspaces', state.workspaceId), { driveLink: link });
         state.driveLink = link;
         updateDriveStatus();
-        if (link) {
-          alert('✅ Link Google Drive berhasil disimpan!');
-        } else {
-          alert('Link Google Drive telah dihapus.');
-        }
+        if (link) alert('✅ Link Google Drive berhasil disimpan!');
+        else alert('Link Google Drive telah dihapus.');
       } catch (err) { alert('Gagal: ' + err.message); }
     });
   }
 
-  // Listener input real-time untuk verifikasi teks Drive
   if ($('driveLinkInput')) {
     $('driveLinkInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); $('saveDriveBtn')?.click(); }
     });
-    $('driveLinkInput').addEventListener('input', (e) => {
-      updateDriveStatus(e.target.value);
-    });
+    $('driveLinkInput').addEventListener('input', (e) => { updateDriveStatus(e.target.value); });
   }
 
   function toggleWorkspaceDriveGroup() {
     const group = $('workspaceDriveGroup');
     const source = $('taskDriveSource');
     if (!group || !source) return;
-    group.style.display = source.value === 'workspace' ? 'block' : 'none';
+    group.classList.toggle('hidden', source.value !== 'workspace');
   }
   if ($('taskDriveSource')) {
     $('taskDriveSource').addEventListener('change', toggleWorkspaceDriveGroup);
@@ -1057,14 +1026,10 @@ function setupEventListeners() {
     if (!startEl || !endEl) return;
     if (startEl.value) {
       endEl.min = startEl.value;
-      if (endEl.value && endEl.value < startEl.value) {
-        endEl.value = startEl.value;
-      }
+      if (endEl.value && endEl.value < startEl.value) endEl.value = startEl.value;
     }
   }
-  if ($('startDate')) {
-    $('startDate').addEventListener('change', syncEndDateMin);
-  }
+  if ($('startDate')) $('startDate').addEventListener('change', syncEndDateMin);
   if ($('endDate')) {
     $('endDate').addEventListener('change', () => {
       const startEl = $('startDate');
@@ -1084,28 +1049,16 @@ function setupEventListeners() {
     const driveSource = $('taskDriveSource').value;
     const startDate = $('startDate').value;
     const endDate = $('endDate').value;
-
     if (!title || !assignee) return alert('Judul & assignee wajib diisi!');
     if (state.role !== 'mentor') return;
-    if (startDate && endDate && endDate < startDate) {
-      return alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
-    }
-
+    if (startDate && endDate && endDate < startDate) return alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
     try {
       await addDoc(collection(db, 'workspaces', state.workspaceId, 'tasks'), {
-        title,
-        assignee,
-        difficulty,
-        startDate,
-        endDate,
+        title, assignee, difficulty, startDate, endDate,
         desc: $('taskDesc').value.trim(),
-        driveSource,
-        status: 'todo',
-        reportNotes: '',
-        reportFileLink: '',
-        revisionNotes: '',
-                createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        driveSource, status: 'todo',
+        reportNotes: '', reportFileLink: '', revisionNotes: '',
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp()
       });
       e.target.reset();
       if ($('taskDifficulty')) $('taskDifficulty').value = 'sedang';
@@ -1122,12 +1075,10 @@ function setupEventListeners() {
     const notes = $('reportNotes').value.trim();
     const reportLinkEl = $('reportDriveLink');
     const reportLink = reportLinkEl ? reportLinkEl.value.trim() : (state.driveLink || '');
-
     if (!reportLink) return alert('Tautan Google Drive wajib diisi!');
     if (!safeUrl(reportLink)) return alert('Tautan harus diawali http:// atau https://');
     const reportTask = state.tasks.find(x => x.id === taskId);
     if (!reportTask || reportTask.status !== 'progress') return alert('Tugas ini tidak sedang dikerjakan.');
-
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
         status: 'review',
@@ -1140,9 +1091,7 @@ function setupEventListeners() {
       $('reportModal').classList.add('hidden');
       e.target.reset();
       alert('✅ Laporan terkirim ke Mentor!');
-    } catch (err) { 
-      alert('Gagal: ' + err.message); 
-    }
+    } catch (err) { alert('Gagal: ' + err.message); }
   });
 
   $('btnValidateDone').addEventListener('click', async () => {
@@ -1163,7 +1112,6 @@ function setupEventListeners() {
     const taskId = $('reviewTaskId').value;
     const revNotes = $('mentorReviewNotes').value.trim();
     if (!revNotes) return alert('Catatan revisi wajib diisi jika ingin meminta revisi.');
-
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', taskId), {
         status: 'progress',
@@ -1178,6 +1126,7 @@ function setupEventListeners() {
 
   ['taskSearch', 'filterStatus', 'filterDifficulty', 'filterDue', 'filterAssignee'].forEach(id =>
     $(id)?.addEventListener(id === 'taskSearch' ? 'input' : 'change', renderTasks));
+
   $('leaveWorkspaceBtn').addEventListener('click', leaveWorkspace);
   $('changeCodeBtn').addEventListener('click', changeJoinCode);
   $('deleteWorkspaceBtn').addEventListener('click', deleteWorkspace);
@@ -1194,9 +1143,12 @@ function setupEventListeners() {
     if (endDate < startDate) return alert('Tenggat waktu tidak boleh lebih awal dari tanggal mulai.');
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'tasks', $('editTaskId').value), {
-        title: $('editTaskTitle').value.trim(), assignee: $('editTaskAssignee').value,
-        difficulty: $('editTaskDifficulty').value, startDate, endDate,
-        desc: $('editTaskDesc').value.trim(), updatedAt: serverTimestamp()
+        title: $('editTaskTitle').value.trim(),
+        assignee: $('editTaskAssignee').value,
+        difficulty: $('editTaskDifficulty').value,
+        startDate, endDate,
+        desc: $('editTaskDesc').value.trim(),
+        updatedAt: serverTimestamp()
       });
       $('editTaskModal').classList.add('hidden');
     } catch (err) { alert('Gagal: ' + err.message); }
@@ -1217,9 +1169,6 @@ function setupEventListeners() {
         : 'Gagal: ' + (err.code ? mapAuthError(err.code) : err.message));
     }
   });
-
-  $('closeModalBtn').addEventListener('click', () => $('reportModal').classList.add('hidden'));
-  $('closeReviewModalBtn').addEventListener('click', () => $('reviewModal').classList.add('hidden'));
 
   $('createDivisionForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1249,8 +1198,7 @@ function setupEventListeners() {
     }
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'members', memId), {
-        role: newRole,
-        division: newDiv
+        role: newRole, division: newDiv
       });
       $('editMemberModal').classList.add('hidden');
       alert('✅ Data anggota diperbarui!');
@@ -1262,8 +1210,7 @@ function setupEventListeners() {
     if (!goal) return;
     try {
       await updateDoc(doc(db, 'workspaces', state.workspaceId, 'members', state.user.uid), {
-        dailyGoal: goal,
-        goalDate: localDate()
+        dailyGoal: goal, goalDate: localDate()
       });
       $('dailyGoalInput').value = '';
     } catch (err) { alert('Gagal: ' + err.message); }
@@ -1273,7 +1220,6 @@ function setupEventListeners() {
 function init() {
   setDefaultDates();
   setupEventListeners();
-
   onAuthStateChanged(auth, (user) => {
     if (user) {
       state.user = user;
@@ -1283,11 +1229,9 @@ function init() {
         const words = (user.displayName || '').trim().split(/\s+/).filter(Boolean);
         initialsEl.textContent = (words.length > 1 ? words[0][0] + words[1][0] : nameSource.substring(0, 2)).toUpperCase();
       }
-
       ensureUserDoc(user)
         .catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err))
         .finally(() => showDashboardView());
-
     } else {
       unsubscribers.forEach(u => u());
       unsubscribers = [];
