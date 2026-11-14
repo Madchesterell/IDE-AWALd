@@ -790,45 +790,45 @@ function setupEventListeners() {
 }
 
 function init() {
-  setDefaultDates();
-  setupEventListeners();
+  setDefaultDates();
+  setupEventListeners();   // Memasang semua event listener tombol
 
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      state.user = user;
-      const initialsEl = $('userAvatarInitials');
-      if (initialsEl) {
-        const nameSource = user.displayName || user.email || 'FA';
-        initialsEl.textContent = nameSource.substring(0, 2).toUpperCase();
-      }
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      state.user = user;
+      const initialsEl = $('userAvatarInitials');
+      if (initialsEl) {
+        const nameSource = user.displayName || user.email || 'FA';
+        initialsEl.textContent = nameSource.substring(0, 2).toUpperCase();
+      }
 
-      // Memastikan dokumen user ada, lalu tampilkan dashboard
-      ensureUserDoc(user)
-        .catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err))
-        .finally(() => showDashboardView());
+      ensureUserDoc(user)
+        .catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err))
+        .finally(() => showDashboardView());
 
-    } else {
-      state.user = null;
-      showAuthView();
-    }
-  });
-} // <-- Kurung kurawal penutup untuk fungsi init() yang tepat
+    } else {
+      state.user = null;
+      showAuthView();
+    }
+  });
+} 
+// ❌ HAPUS kurung kurawal berlebih yang ada di sini sebelumnya!
 
 async function ensureUserDoc(user) {
-  try {
-    const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        email: user.email,
-        displayName: user.displayName || user.email.split('@')[0],
-        workspaceIds: [],
-        createdAt: serverTimestamp()
-      });
-    }
-  } catch (err) {
-    console.error('[DEBUG] Gagal cek/buat dokumen user:', err);
-  }
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: user.email,
+        displayName: user.displayName || user.email.split('@')[0],
+        workspaceIds: [],
+        createdAt: serverTimestamp()
+      });
+    }
+  } catch (err) {
+    console.error('[DEBUG] Gagal cek/buat dokumen user:', err);
+  }
 }
 
-init();
+init(); // Menjalankan inisialisasi utama aplikasi
