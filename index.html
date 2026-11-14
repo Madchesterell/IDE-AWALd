@@ -13,7 +13,7 @@
     <div class="auth-hero">
       <div class="auth-glass">
         <h2>WorkSpace<span>Pro</span></h2>
-        <p>Platform manajemen tugas dan divisi untuk tim Anda. Pantau progres, bagikan tugas, dan kolaborasi dalam satu tempat.</p>
+                <p>Platform manajemen tugas dan divisi untuk tim Anda. Pantau progres, bagikan tugas, dan kolaborasi dalam satu tempat.</p>
       </div>
     </div>
     <div class="auth-panel">
@@ -22,7 +22,6 @@
         <h1 id="authTitle" class="auth-title">Selamat <span>Datang</span></h1>
         <p id="authSubtitle" class="auth-subtitle">Masuk untuk mengakses dashboard Anda.</p>
 
-        <!-- Login Form -->
         <form id="loginForm">
           <div class="form-group">
             <label for="loginEmail">Alamat Email</label>
@@ -43,12 +42,11 @@
             Masuk dengan Google
           </button>
           <div class="auth-footer">
-            <span id="authToggleText">Belum punya akun?</span>
+            <span>Belum punya akun?</span>
             <a href="#" id="authToggleLink">Daftar sekarang</a>
           </div>
         </form>
 
-        <!-- Register Form -->
         <form id="registerForm" class="hidden">
           <div class="form-group">
             <label for="registerName">Nama Lengkap</label>
@@ -79,106 +77,69 @@
         <h3>WorkSpace<span>Pro</span></h3>
       </div>
 
-      <!-- NAVIGASI UTAMA -->
       <nav class="sidebar-menu">
         <button id="dashboardNavBtn" class="menu-item active"><span class="menu-icon">▦</span> Dashboard</button>
         <button id="myWorkspacesNavBtn" class="menu-item"><span class="menu-icon">▣</span> Ruang Kerja Saya</button>
-        <button id="notificationsNavBtn" class="menu-item notification-nav-item">
-          <span class="menu-icon">♧</span> Notifikasi
-          <span id="dashboardNotificationBadge" class="sidebar-notification-badge hidden">0</span>
-        </button>
+        <button id="notificationsNavBtn" class="menu-item"><span class="menu-icon">♧</span> Notifikasi</button>
       </nav>
 
-      <!-- PENGATURAN AKUN - Tepat di bawah navigasi -->
       <div class="sidebar-settings-section">
         <button id="accountBtn" class="menu-item menu-item-settings">
           <span class="menu-icon">⚙</span> Pengaturan Akun
         </button>
       </div>
 
-      <!-- FOOTER SIDEBAR - Profil Pengguna -->
       <div class="sidebar-footer">
-        <div class="user-profile-badge">
-          <div class="avatar-circle" id="userAvatarInitials">WP</div>
-          <div class="user-info-text">
-            <span class="user-name" id="userEmailDisplay">Pengguna</span>
-            <span class="user-role">Anggota</span>
-          </div>
-        </div>
-        <button id="logoutBtn" class="btn-logout-sidebar">⎋ Keluar</button>
+        <button id="logoutBtn" class="btn-logout-sidebar">⎋ Keluar dari Akun</button>
       </div>
     </aside>
 
     <div class="main-content-wrapper">
       <header class="dashboard-topbar">
         <h1 id="dashboardPageTitle" class="topbar-title">Dashboard</h1>
+        <!-- Profil dipindahkan ke pojok kanan atas header -->
+        <div class="topbar-profile-badge">
+          <div class="avatar-circle" id="topbarUserAvatar">WP</div>
+          <div class="user-info-text">
+            <span class="user-name" id="topbarUserName">Pengguna</span>
+            <span class="user-role" id="topbarUserRole">Anggota</span>
+          </div>
+        </div>
       </header>
 
       <main class="dashboard-content">
-        <!-- HOME PANEL -->
         <section id="dashboardHomePanel" class="dashboard-panel">
-          <div class="welcome-alert">
-            Selamat datang kembali. Berikut ringkasan aktivitas dan ruang kerja Anda.
-          </div>
-
+          <div class="welcome-alert">Selamat datang kembali. Berikut ringkasan aktivitas dan ruang kerja Anda.</div>
           <div class="card">
             <div class="section-header-title">
-              <h3>Ringkasan Notifikasi</h3>
-              <p class="subtitle">Tugas yang membutuhkan tindakan dan tugas yang telah diselesaikan.</p>
+              <h3>Ruang Kerja Saya</h3>
+              <p class="subtitle">Akses ruang kerja yang Anda ikuti.</p>
             </div>
-            <div id="dashboardNotificationSummary">
-              <p class="empty-hint">Memuat ringkasan notifikasi...</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="section-header-title" style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <h3>Ruang Kerja Saya</h3>
-                <p class="subtitle">Akses ruang kerja yang Anda ikuti.</p>
-              </div>
-              <button id="viewAllWorkspacesBtn" class="dashboard-text-link">Lihat semua →</button>
-            </div>
-            <div id="dashboardWorkspacePreview">
-              <p class="empty-hint">Memuat daftar ruang kerja...</p>
-            </div>
+            <div id="dashboardWorkspacePreview"><p class="empty-hint">Memuat daftar ruang kerja...</p></div>
           </div>
         </section>
 
-        <!-- WORKSPACES PANEL - Tombol Buat & Gabung dipindahkan ke sini -->
         <section id="myWorkspacesPanel" class="dashboard-panel hidden">
           <div class="card">
             <div class="section-header-title">
               <h3>Ruang Kerja Saya</h3>
               <p class="subtitle">Pilih ruang kerja yang ingin dibuka, atau buat dan gabung ruang kerja baru.</p>
             </div>
-
-            <!-- Tombol Aksi - Dipindahkan dari sidebar -->
             <div class="workspace-action-bar">
-              <button id="createWorkspaceBtn" class="btn-workspace-action primary">
-                <span class="btn-icon">＋</span> Buat Ruang Kerja
-              </button>
-              <button id="joinWorkspaceBtn" class="btn-workspace-action secondary">
-                <span class="btn-icon">↗</span> Gabung Ruang Kerja
-              </button>
+              <button id="createWorkspaceBtn" class="btn-workspace-action primary"><span class="btn-icon">＋</span> Buat Ruang Kerja</button>
+              <button id="joinWorkspaceBtn" class="btn-workspace-action secondary"><span class="btn-icon">↗</span> Gabung Ruang Kerja</button>
             </div>
-
-            <div id="workspaceList">
-              <p class="empty-hint">Memuat daftar ruang kerja...</p>
-            </div>
+            <div id="workspaceList"><p class="empty-hint">Memuat daftar ruang kerja...</p></div>
           </div>
         </section>
 
-        <!-- NOTIFICATIONS PANEL -->
         <section id="notificationsPanel" class="dashboard-panel hidden">
           <div class="card">
             <div class="section-header-title">
               <h3>Notifikasi</h3>
               <p class="subtitle">Semua tugas yang perlu ditindaklanjuti maupun yang sudah selesai.</p>
             </div>
-            <div id="dashboardNotificationsList" class="dashboard-notifications-list">
-              <p class="empty-hint">Memuat notifikasi...</p>
-            </div>
+            <div id="dashboardNotificationsList" class="dashboard-notifications-list"><p class="empty-hint">Memuat notifikasi...</p></div>
           </div>
         </section>
       </main>
@@ -188,12 +149,9 @@
   <!-- ==================== WORKSPACE VIEW ==================== -->
   <div id="workspaceView" class="hidden">
     <nav class="navbar">
-      <div class="brand">
-        <h1 id="workspaceTitle">Ruang Kerja</h1>
-      </div>
+      <div class="brand"><h1 id="workspaceTitle">Ruang Kerja</h1></div>
       <div style="display:flex;align-items:center;gap:1rem;">
         <span id="roleControls" class="role-controls"></span>
-        <span id="liveStatus" style="font-size:0.8rem;color:#16a34a;">● Terhubung</span>
       </div>
     </nav>
 
@@ -201,7 +159,7 @@
       <aside class="workspace-sidebar">
         <div class="ws-sidebar-section">
           <div class="ws-sidebar-label">Menu Ruang Kerja</div>
-          <button id="tabTaskView" class="ws-nav-item active"><span>▦</span> <span id="tabTaskLabel">Papan Tugas</span></button>
+          <button id="tabTaskView" class="ws-nav-item active"><span>▦</span> <span id="tabTaskLabel">Tugas Saya</span></button>
           <button id="tabDivisionView" class="ws-nav-item hidden"><span>◎</span> Manajemen Divisi</button>
         </div>
 
@@ -213,15 +171,6 @@
           </div>
         </div>
 
-        <div id="workerDailyGoalBox" class="ws-sidebar-section hidden">
-          <div class="ws-sidebar-label">Target Harian</div>
-          <div class="daily-goal-form">
-            <input type="text" id="dailyGoalInput" placeholder="Target hari ini..." />
-            <button id="saveDailyGoalBtn" class="btn-primary">Simpan</button>
-          </div>
-          <div id="dailyGoalDisplay" class="goal-badge"></div>
-        </div>
-
         <div class="ws-sidebar-section" style="margin-top:auto;">
           <button id="leaveWorkspaceBtn" class="ws-back-btn">⎋ Keluar dari Ruang Kerja</button>
           <button id="backToDashboardBtn" class="ws-back-btn">← Kembali ke Dashboard</button>
@@ -229,9 +178,7 @@
       </aside>
 
       <main class="workspace-content">
-        <!-- MAIN TASK CONTAINER -->
         <div id="mainTaskContainer">
-          <!-- Mentor: Create Task -->
           <div id="mentorTaskCreator" class="card hidden">
             <div class="section-header-title">
               <h3>Buat Tugas Baru</h3>
@@ -289,7 +236,19 @@
             </form>
           </div>
 
-          <!-- Task Filters -->
+          <!-- TARGET HARIAN DIPINDAHKAN KE SINI (Atas Tabel) -->
+          <div id="dailyGoalSection" class="card hidden" style="margin-bottom: 1.5rem;">
+            <div class="section-header-title">
+              <h3>🎯 Target Harian</h3>
+              <p class="subtitle">Catat fokus atau target penyelesaian tugas Anda hari ini.</p>
+            </div>
+            <div class="daily-goal-form">
+              <input type="text" id="dailyGoalInput" placeholder="Apa target utama Anda hari ini?" />
+              <button id="saveDailyGoalBtn" class="btn-primary">Simpan Target</button>
+            </div>
+            <div id="dailyGoalDisplay" class="goal-badge"></div>
+          </div>
+
           <div class="card">
             <div class="task-toolbar">
               <input type="text" id="taskSearch" placeholder="🔍 Cari tugas..." />
@@ -297,7 +256,7 @@
                 <option value="">Semua status</option>
                 <option value="todo">Belum Mulai</option>
                 <option value="progress">Berjalan</option>
-                <option value="review">Dinilai</option>
+                <option value="review">Revisi</option>
                 <option value="done">Selesai</option>
               </select>
               <select id="filterDifficulty">
@@ -306,16 +265,9 @@
                 <option value="sedang">Sedang</option>
                 <option value="tinggi">Tinggi</option>
               </select>
-              <select id="filterDue">
-                <option value="">Semua tenggat</option>
-                <option value="overdue">Terlambat</option>
-                <option value="soon">Segera (≤ 2 hari)</option>
-                <option value="week">7 hari ke depan</option>
-              </select>
               <select id="filterAssignee" class="hidden">
                 <option value="">Semua anggota</option>
               </select>
-              <span id="taskBadge" class="action-badge hidden">0</span>
             </div>
 
             <div style="overflow-x:auto;">
@@ -328,19 +280,16 @@
                     <th class="col-center">Tingkat Kesulitan</th>
                     <th class="col-center">Status</th>
                     <th>Tenggat Waktu</th>
-                    <th>File Drive</th>
-                    <th class="col-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="taskTableBody">
-                  <tr><td colspan="8" style="text-align:center;padding:2rem;color:#6b7280;">Belum ada tugas dalam daftar.</td></tr>
+                  <tr><td colspan="6" style="text-align:center;padding:2rem;color:#6b7280;">Belum ada tugas dalam daftar.</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- DIVISION MANAGEMENT PANEL -->
         <div id="divisionManagementPanel" class="hidden">
           <div class="card">
             <div class="section-header-title">
@@ -360,22 +309,13 @@
                 <button type="submit" class="btn-primary">Buat Divisi</button>
               </div>
             </form>
-            <div id="divisionListContainer">
-              <p class="empty-hint">Belum ada divisi terdaftar.</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="section-header-title">
-              <h3>Pengaturan Ruang Kerja</h3>
-              <p class="subtitle">Kode undangan saat ini: <span id="wsCodeDisplay" class="code-chip">-</span></p>
-            </div>
+            <div id="divisionListContainer"><p class="empty-hint">Belum ada divisi terdaftar.</p></div>
           </div>
 
           <div class="card">
             <div class="section-header-title">
               <h3>Pengaturan Anggota</h3>
-              <p class="subtitle">Atur peran dan penempatan divisi untuk setiap anggota. <span id="workerCountDisplay"></span></p>
+              <p class="subtitle">Atur peran dan penempatan divisi untuk setiap anggota.</p>
             </div>
             <div style="overflow-x:auto;">
               <table id="memberSettingsTable">
@@ -384,7 +324,7 @@
                     <th>NAMA</th>
                     <th>EMAIL</th>
                     <th class="col-center">PERAN</th>
-                    <th>DIVISI</th>
+                    <th class="col-divisi">DIVISI</th>
                     <th class="col-center">AKSI</th>
                   </tr>
                 </thead>
@@ -398,27 +338,60 @@
   </div>
 
   <!-- ==================== MODALS ==================== -->
+  
+  <!-- TASK DETAIL POP-UP CARD (BARU) -->
+  <div id="taskDetailModal" class="modal hidden">
+    <div class="modal-content modal-content-lg">
+      <button class="close-modal" data-close="taskDetailModal">×</button>
+      <h2 id="detailTaskTitle" style="margin-bottom:0.5rem; color:var(--primary);">Judul Tugas</h2>
+      <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <span id="detailTaskStatus" class="stat-pill">Status</span>
+        <span id="detailTaskDifficulty" class="stat-pill">Kesulitan</span>
+        <span id="detailTaskDates" style="font-size:0.85rem; color:var(--text-muted); display:flex; align-items:center;">📅 Tanggal</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+        <div>
+          <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Ditugaskan Kepada</label>
+          <p id="detailTaskAssignee" style="font-weight:600; margin-top:0.25rem;">-</p>
+        </div>
+        <div>
+          <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tautan Google Drive</label>
+          <p id="detailTaskDrive" style="margin-top:0.25rem;">-</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Deskripsi & Instruksi</label>
+        <p id="detailTaskDesc" style="margin-top:0.25rem; line-height:1.6; color:var(--text); white-space:pre-wrap;">-</p>
+      </div>
+
+      <div id="detailRevisionBox" class="review-report-box hidden" style="margin-bottom:1.5rem;">
+        <strong>⚠️ Catatan Revisi dari Mentor:</strong>
+        <p id="detailRevisionNotes" style="margin-top:0.5rem;"></p>
+      </div>
+
+      <div id="detailHistoryBox" style="margin-bottom:1.5rem;">
+        <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Riwayat Aktivitas</label>
+        <div id="detailHistoryList" style="margin-top:0.5rem;"></div>
+      </div>
+
+      <div id="detailActionButtons" style="display:flex; gap:0.75rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:1.5rem;">
+        <!-- Tombol aksi akan di-render di sini oleh JavaScript -->
+      </div>
+    </div>
+  </div>
 
   <!-- Create Workspace Modal -->
   <div id="createWorkspaceModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-modal" data-close="createWorkspaceModal">×</button>
       <h2 style="margin-bottom:0.5rem;">Buat Ruang Kerja Baru</h2>
-      <p class="subtitle">Anda akan menjadi Mentor. Buat kode undangan 6 karakter untuk dibagikan kepada anggota.</p>
       <form id="createWorkspaceForm">
-        <div class="form-group">
-          <label for="newWorkspaceName">Nama Ruang Kerja</label>
-          <input type="text" id="newWorkspaceName" required />
-        </div>
-        <div class="form-group">
-          <label for="newWorkspaceCode">Kode Undangan (6 karakter)</label>
-          <input type="text" id="newWorkspaceCode" maxlength="6" pattern="[A-Za-z0-9]{6}" required />
-        </div>
-        <div class="form-group">
-          <label for="newWorkspaceDrive">Tautan Folder Google Drive (opsional)</label>
-          <input type="url" id="newWorkspaceDrive" placeholder="https://drive.google.com/..." />
-        </div>
-        <button type="submit" id="createWorkspaceSubmitBtn" class="btn-primary">Buat Ruang Kerja</button>
+        <div class="form-group"><label for="newWorkspaceName">Nama Ruang Kerja</label><input type="text" id="newWorkspaceName" required /></div>
+        <div class="form-group"><label for="newWorkspaceCode">Kode Undangan (6 karakter)</label><input type="text" id="newWorkspaceCode" maxlength="6" pattern="[A-Za-z0-9]{6}" required /></div>
+        <div class="form-group"><label for="newWorkspaceDrive">Tautan Folder Google Drive (opsional)</label><input type="url" id="newWorkspaceDrive" placeholder="https://drive.google.com/..." /></div>
+        <button type="submit" class="btn-primary">Buat Ruang Kerja</button>
       </form>
     </div>
   </div>
@@ -428,68 +401,10 @@
     <div class="modal-content">
       <button class="close-modal" data-close="joinWorkspaceModal">×</button>
       <h2 style="margin-bottom:0.5rem;">Gabung Ruang Kerja</h2>
-      <p class="subtitle">Masukkan kode undangan yang diberikan oleh Mentor.</p>
       <form id="joinWorkspaceForm">
-        <div class="form-group">
-          <label for="joinCodeInput">Kode Undangan (6 karakter)</label>
-          <input type="text" id="joinCodeInput" maxlength="6" required />
-        </div>
-        <button type="submit" id="joinWorkspaceSubmitBtn" class="btn-primary">Gabung Ruang Kerja</button>
+        <div class="form-group"><label for="joinCodeInput">Kode Undangan (6 karakter)</label><input type="text" id="joinCodeInput" maxlength="6" required /></div>
+        <button type="submit" class="btn-primary">Gabung Ruang Kerja</button>
       </form>
-    </div>
-  </div>
-
-  <!-- Edit Task Modal -->
-  <div id="editTaskModal" class="modal hidden">
-    <div class="modal-content">
-      <button class="close-modal" data-close="editTaskModal">×</button>
-      <h2 style="margin-bottom:0.5rem;">Edit Tugas</h2>
-      <form id="editTaskForm">
-        <input type="hidden" id="editTaskId" />
-        <div class="form-group">
-          <label for="editTaskTitle">Judul Tugas</label>
-          <input type="text" id="editTaskTitle" required />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editTaskAssignee">Ditugaskan Kepada</label>
-            <select id="editTaskAssignee" required></select>
-          </div>
-          <div class="form-group">
-            <label for="editTaskDifficulty">Tingkat Kesulitan</label>
-            <select id="editTaskDifficulty">
-              <option value="rendah">Rendah</option>
-              <option value="sedang">Sedang</option>
-              <option value="tinggi">Tinggi</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editTaskStart">Tanggal Mulai</label>
-            <input type="date" id="editTaskStart" />
-          </div>
-          <div class="form-group">
-            <label for="editTaskEnd">Tenggat Waktu</label>
-            <input type="date" id="editTaskEnd" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="editTaskDesc">Instruksi & Kriteria</label>
-          <textarea id="editTaskDesc" rows="3"></textarea>
-        </div>
-        <button type="submit" class="btn-primary">Simpan Perubahan</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- History Modal -->
-  <div id="historyModal" class="modal hidden">
-    <div class="modal-content">
-      <button class="close-modal" data-close="historyModal">×</button>
-      <h2 style="margin-bottom:0.5rem;">Riwayat Tugas</h2>
-      <h3 id="historyTitle" style="margin-bottom:1rem;color:var(--primary);"></h3>
-      <div id="historyList"></div>
     </div>
   </div>
 
@@ -498,55 +413,11 @@
     <div class="modal-content">
       <button class="close-modal" data-close="accountModal">×</button>
       <h2 style="margin-bottom:0.5rem;">Pengaturan Akun</h2>
-      <p class="subtitle">Mengganti nama juga memperbarui nama di semua ruang kerja dan tugas Anda.</p>
       <form id="accountForm">
-        <div class="form-group">
-          <label for="accountName">Nama</label>
-          <input type="text" id="accountName" required />
-        </div>
-        <div class="form-group">
-          <label for="accountPassword">Kata Sandi Baru (opsional)</label>
-          <input type="password" id="accountPassword" minlength="6" />
-        </div>
+        <div class="form-group"><label for="accountName">Nama</label><input type="text" id="accountName" required /></div>
+        <div class="form-group"><label for="accountPassword">Kata Sandi Baru (opsional)</label><input type="password" id="accountPassword" minlength="6" /></div>
         <button type="submit" class="btn-primary">Simpan</button>
       </form>
-    </div>
-  </div>
-
-  <!-- Report Modal -->
-  <div id="reportModal" class="modal hidden">
-    <div class="modal-content">
-      <button id="closeModalBtn" class="close-modal" data-close="reportModal">×</button>
-      <h2 style="margin-bottom:0.5rem;">Kirim Laporan & Bukti Kerja</h2>
-      <p id="reportModalSubtitle" class="subtitle">Unggah tugas Anda sesuai arahan mentor.</p>
-      <form id="submitReportForm">
-        <input type="hidden" id="reportTaskId" />
-        <div class="form-group">
-          <label for="reportNotes">Catatan Progres Pekerjaan</label>
-          <textarea id="reportNotes" rows="3"></textarea>
-        </div>
-        <div id="reportDriveContainer"></div>
-        <button type="submit" class="btn-primary">Kirim Laporan ke Mentor</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Review Modal -->
-  <div id="reviewModal" class="modal hidden">
-    <div class="modal-content">
-      <button id="closeReviewModalBtn" class="close-modal" data-close="reviewModal">×</button>
-      <h2 style="margin-bottom:0.5rem;">Evaluasi & Validasi Tugas</h2>
-      <p class="subtitle">Berikan keputusan validasi atau catatan revisi untuk pekerja.</p>
-      <input type="hidden" id="reviewTaskId" />
-      <div id="reviewReportNotes" class="review-report-box"></div>
-      <div class="form-group">
-        <label for="mentorReviewNotes">Catatan Revisi / Masukan untuk Pekerja</label>
-        <textarea id="mentorReviewNotes" rows="3" placeholder="Kosongkan jika tugas sudah sempurna dan langsung divalidasi (selesai)."></textarea>
-      </div>
-      <div style="display:flex;gap:0.5rem;">
-        <button id="btnValidateDone" class="btn-primary" style="background:var(--success);">✅ Validasi Selesai</button>
-        <button id="btnSendRevision" class="btn-primary" style="background:var(--warning);">↩ Minta Revisi</button>
-      </div>
     </div>
   </div>
 
@@ -557,15 +428,12 @@
       <h2 style="margin-bottom:0.5rem;">Atur Divisi & Peran Anggota</h2>
       <form id="editMemberForm">
         <input type="hidden" id="editMemberId" />
-        <div class="form-group">
-          <label>Nama Anggota</label>
-          <input type="text" id="editMemberNameDisplay" disabled />
-        </div>
+        <div class="form-group"><label>Nama Anggota</label><input type="text" id="editMemberNameDisplay" disabled /></div>
         <div class="form-group">
           <label for="editMemberRole">Peran (Role)</label>
           <select id="editMemberRole">
-            <option value="worker">Pekerja (Worker / Employee)</option>
-            <option value="mentor">Mentor (Manager / Admin)</option>
+            <option value="worker">Pekerja (Worker)</option>
+            <option value="mentor">Mentor (Manager)</option>
           </select>
         </div>
         <div class="form-group">
@@ -577,10 +445,7 @@
     </div>
   </div>
 
-  <noscript>
-    <div style="padding:2rem;text-align:center;">Aplikasi ini membutuhkan JavaScript untuk berjalan.</div>
-  </noscript>
-
+  <noscript><div style="padding:2rem;text-align:center;">Aplikasi ini membutuhkan JavaScript untuk berjalan.</div></noscript>
   <script type="module" src="script.js"></script>
 </body>
 </html>
