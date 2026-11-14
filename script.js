@@ -92,16 +92,18 @@ function showWorkspaceView() {
 }
 
 function switchWorkspaceTab(tabName) {
+  const taskBtn = $('tabTaskView');
+  const divBtn = $('tabDivisionView');
   if (tabName === 'task') {
     $('mainTaskContainer').classList.remove('hidden');
     $('divisionManagementPanel').classList.add('hidden');
-    $('tabTaskView').className = 'btn-primary';
-    $('tabDivisionView').className = 'btn-secondary';
+    if (taskBtn) { taskBtn.classList.add('active'); taskBtn.classList.remove('btn-primary', 'btn-secondary'); }
+    if (divBtn) { divBtn.classList.remove('active'); divBtn.classList.remove('btn-primary', 'btn-secondary'); }
   } else {
     $('mainTaskContainer').classList.add('hidden');
     $('divisionManagementPanel').classList.remove('hidden');
-    $('tabTaskView').className = 'btn-secondary';
-    $('tabDivisionView').className = 'btn-primary';
+    if (taskBtn) { taskBtn.classList.remove('active'); taskBtn.classList.remove('btn-primary', 'btn-secondary'); }
+    if (divBtn) { divBtn.classList.add('active'); divBtn.classList.remove('btn-primary', 'btn-secondary'); }
     renderDivisionManagement();
   }
 }
@@ -417,14 +419,18 @@ function updateDriveStatus() {
   const statusEl = $('driveStatusText');
   const inputEl = $('driveLinkInput');
   if (!statusEl) return;
-  if (state.driveLink) {
-    statusEl.textContent = `✅ Folder tertaut: ${state.driveLink}`;
+  const saved = (state.driveLink || '').trim();
+  if (saved) {
+    statusEl.innerHTML = `✅ Folder tertaut: <a href="${escapeHtml(saved)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;word-break:break-all;">${escapeHtml(saved)}</a>`;
     statusEl.classList.add('linked');
   } else {
     statusEl.textContent = 'Belum ada folder tertaut.';
     statusEl.classList.remove('linked');
   }
-  if (inputEl) inputEl.value = state.driveLink;
+  // Sinkronkan input hanya jika berbeda (agar user bisa menghapus teks tanpa langsung di-overwrite)
+  if (inputEl && inputEl.value.trim() !== saved && document.activeElement !== inputEl) {
+    inputEl.value = saved;
+  }
 }
 
 function renderDivisionOptions() {
@@ -682,7 +688,14 @@ function setupEventListeners() {
       const link = ($('driveLinkInput')?.value || '').trim();
       try {
         await updateDoc(doc(db, 'workspaces', state.workspaceId), { driveLink: link });
-        alert('✅ Link Google Drive disimpan!');
+        // Update lokal segera supaya status hijau sesuai link yang benar-benar tersimpan
+        state.driveLink = link;
+        updateDriveStatus();
+        if (link) {
+          alert('✅ Link Google Drive berhasil disimpan!');
+        } else {
+          alert('Link Google Drive telah dihapus.');
+        }
       } catch (err) { alert('Gagal: ' + err.message); }
     });
   }
