@@ -791,6 +791,7 @@ function setupEventListeners() {
 
 function init() {
   setDefaultDates();
+  setupEventListeners();   // ← panggil SEKALI di sini
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -800,17 +801,18 @@ function init() {
         const nameSource = user.displayName || user.email || 'FA';
         initialsEl.textContent = nameSource.substring(0, 2).toUpperCase();
       }
-      showDashboardView();
-      
-      // Event listener dipasang di sini saat elemen dashboard sudah tampil
-      setupEventListeners();
 
-      ensureUserDoc(user).catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err));
+      // ensureUserDoc dulu, baru tampilkan dashboard (lihat Bug #2)
+      ensureUserDoc(user)
+        .catch(err => console.error('[DEBUG] ensureUserDoc gagal:', err))
+        .finally(() => showDashboardView());
+
     } else {
       state.user = null;
       showAuthView();
     }
   });
+}
 }
 
 async function ensureUserDoc(user) {
