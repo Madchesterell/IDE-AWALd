@@ -110,17 +110,17 @@
         <main class="dashboard-content">
             <!-- Alert Selamat Datang -->
             <div class="welcome-alert">
-                <span>✅ Selamat datang kembali, di dalam ruang kerja anda!</span>
+                <span>✅ Selamat datang kembali, Sinuhun!</span>
             </div>
 
             <div class="section-header-title" style="margin-bottom: 1rem;">
-                <h3>Ruang Kerja Saya</h3>
-                <p class="subtitle" style="margin:0;">Pilih Ruang Kerja untuk masuk, atau buat/gabung yang baru.</p>
+                <h3>Workspace Saya</h3>
+                <p class="subtitle" style="margin:0;">Pilih workspace untuk masuk, atau buat/gabung yang baru.</p>
             </div>
 
             <!-- Kontainer daftar workspace yang di-render oleh script.js -->
             <div id="workspaceList" class="workspace-grid">
-                <p class="empty-hint">Memuat Ruang Kerja...</p>
+                <p class="empty-hint">Memuat workspace...</p>
             </div>
         </main>
     </div>
@@ -148,11 +148,37 @@
         <!-- Papan Tugas -->
         <div id="mainTaskContainer">
             <section id="mentorPanel" class="panel-section">
-                <div class="grid-2-col">
-                    <div class="card">
-                        <h2>Konfigurasi Muara Google Drive</h2>
-                        <p class="subtitle">Tautkan folder Google Drive Anda sebagai tujuan otomatis laporan pekerja.</p>
+                <div class="card">
+                    <h2>Buat & Bagikan Tugas Baru</h2>
+                    <p class="subtitle">Isi detail tugas lalu bagikan ke anggota ruang kerja.</p>
+                    <form id="createTaskForm">
                         <div class="form-group">
+                            <label for="taskTitle">Judul Tugas</label>
+                            <input type="text" id="taskTitle" required placeholder="Contoh: Pembuatan Model 3D Karakter Utama">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="taskAssignee">Tugaskan Kepada</label>
+                                <select id="taskAssignee" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDifficulty">Tingkat Kesulitan</label>
+                                <select id="taskDifficulty" class="form-control" required>
+                                    <option value="rendah">Rendah</option>
+                                    <option value="sedang" selected>Sedang</option>
+                                    <option value="tinggi">Tinggi</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDriveSource">Sumber Tautan Drive Tugas</label>
+                            <select id="taskDriveSource" class="form-control" required>
+                                <option value="workspace">Gunakan Link Drive Utama Workspace (dari Mentor)</option>
+                                <option value="worker">Pekerja Input Link Drive Sendiri</option>
+                            </select>
+                        </div>
+                        <!-- Tautan Google Drive hanya muncul jika pilih "workspace" -->
+                        <div id="workspaceDriveGroup" class="form-group">
                             <label for="driveLinkInput">Tautan Folder Google Drive Mentor</label>
                             <div class="input-with-btn">
                                 <input type="url" id="driveLinkInput" placeholder="https://drive.google.com/drive/folders/...">
@@ -160,72 +186,31 @@
                             </div>
                             <small id="driveStatusText" class="status-text">Belum ada folder tertaut.</small>
                         </div>
-                        <hr class="divider">
-                        <h3>Daftar Anggota Tim & Divisi</h3>
-                        <ul id="workerList" class="worker-tags" style="margin-top: 10px;"></ul>
-                    </div>
-
-                    <div class="card">
-                        <h2>Buat & Bagikan Tugas Baru</h2>
-                        <form id="createTaskForm">
+                        <div class="form-row">
                             <div class="form-group">
-                                <label for="taskTitle">Judul Tugas</label>
-                                <input type="text" id="taskTitle" required placeholder="Contoh: Pembuatan Model 3D Karakter Utama">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="taskAssignee">Tugaskan Kepada</label>
-                                    <select id="taskAssignee" required></select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taskKpi">Target KPI (Poin/Bobot)</label>
-                                    <input type="number" id="taskKpi" min="1" max="100" value="10" required>
-                                </div>
+                                <label for="startDate">Tanggal Mulai</label>
+                                <input type="date" id="startDate" required>
                             </div>
                             <div class="form-group">
-                                <label for="taskDriveSource">Sumber Tautan Drive Tugas</label>
-                                <select id="taskDriveSource" class="form-control" required>
-                                    <option value="workspace">Gunakan Link Drive Utama Workspace (dari Mentor)</option>
-                                    <option value="worker">Pekerja Input Link Drive Sendiri</option>
-                                </select>
+                                <label for="endDate">Tenggat Waktu (Deadline)</label>
+                                <input type="date" id="endDate" required>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="startDate">Tanggal Mulai</label>
-                                    <input type="date" id="startDate" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="endDate">Tenggat Waktu (Deadline)</label>
-                                    <input type="date" id="endDate" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="taskDesc">Instruksi & Kriteria KPI</label>
-                                <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output..."></textarea>
-                            </div>
-                            <button type="submit" class="btn-primary">Bagikan Tugas ke Ruang Kerja</button>
-                        </form>
-                    </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDesc">Instruksi & Kriteria</label>
+                            <textarea id="taskDesc" rows="2" placeholder="Jelaskan detail output..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">Bagikan Tugas ke Ruang Kerja</button>
+                    </form>
                 </div>
             </section>
 
-            <!-- KPI Summary -->
-            <section class="kpi-summary-bar card">
-                <div class="kpi-info">
-                    <h3>Ringkasan Pencapaian KPI Ruang Kerja</h3>
-                    <p id="kpiProgressText">0 dari 0 Poin KPI Tercapai (0%)</p>
-                </div>
-                <div class="progress-wrapper">
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="kpiProgressBar" style="width: 0%;"></div>
-                    </div>
-                </div>
-                <div id="workerDailyGoalBox" class="daily-goal-box hidden">
-                    <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
-                    <button type="button" id="saveDailyGoalBtn" class="btn-primary">Catat Target Harian</button>
-                    <span id="dailyGoalDisplay" class="goal-badge"></span>
-                </div>
-            </section>
+            <!-- Target Harian (khusus pekerja) -->
+            <div id="workerDailyGoalBox" class="daily-goal-box card hidden" style="margin-bottom: 1.25rem;">
+                <input type="text" id="dailyGoalInput" placeholder="Tulis target tugas Anda hari ini...">
+                <button type="button" id="saveDailyGoalBtn" class="btn-primary" style="width: auto; padding: 0.55rem 1rem;">Catat Target Harian</button>
+                <span id="dailyGoalDisplay" class="goal-badge"></span>
+            </div>
 
             <!-- Tabel Daftar Tugas Horizontal -->
             <section class="card" style="padding: 0; overflow: hidden;">
@@ -235,7 +220,7 @@
                             <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">
                                 <th style="padding: 14px 16px;">Judul Tugas</th>
                                 <th style="padding: 14px 16px;">Karyawan</th>
-                                <th style="padding: 14px 16px;">Tingkat Kesulitan (KPI)</th>
+                                <th style="padding: 14px 16px;">Tingkat Kesulitan</th>
                                 <th style="padding: 14px 16px;">Status</th>
                                 <th style="padding: 14px 16px;">Tenggat Waktu</th>
                                 <th style="padding: 14px 16px; text-align: right;">Aksi</th>
@@ -297,18 +282,18 @@
 <div id="createWorkspaceModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" data-close="createWorkspaceModal">&times;</span>
-        <h2>Buat Ruang Kerja Baru</h2>
-        <p class="subtitle">Anda akan menjadi Mentor di Ruang Kerja ini. Buat kode undangan (password) 6 karakter untuk dibagikan ke anggota.</p>
+        <h2>Buat Workspace Baru</h2>
+        <p class="subtitle">Anda akan menjadi Mentor di workspace ini. Buat kode undangan (password) 6 karakter untuk dibagikan ke anggota.</p>
         <form id="createWorkspaceForm">
             <div class="form-group">
-                <label>Nama Ruang Kerja</label>
+                <label>Nama Workspace</label>
                 <input type="text" id="newWorkspaceName" required placeholder="Contoh: Tim Animasi SMKN 4">
             </div>
             <div class="form-group">
                 <label>Kode Undangan Ruang Kerja (6 karakter)</label>
                 <input type="text" id="newWorkspaceCode" required placeholder="Contoh: A1B2C3" maxlength="6" minlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;" pattern="[A-Za-z0-9]{6}" title="Harus 6 karakter huruf/angka">
             </div>
-            <button type="submit" class="btn-primary" id="createWorkspaceSubmitBtn">Buat Ruang Kerja</button>
+            <button type="submit" class="btn-primary" id="createWorkspaceSubmitBtn">Buat Workspace</button>
         </form>
     </div>
 </div>
@@ -317,14 +302,14 @@
 <div id="joinWorkspaceModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" data-close="joinWorkspaceModal">&times;</span>
-        <h2>Gabung Ruang Kerja</h2>
+        <h2>Gabung Workspace</h2>
         <p class="subtitle">Masukkan kode undangan dari Mentor Anda.</p>
         <form id="joinWorkspaceForm">
             <div class="form-group">
                 <label>Kode Undangan (6 karakter)</label>
                 <input type="text" id="joinCodeInput" required placeholder="Contoh: A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
             </div>
-            <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Ruang Kerja</button>
+            <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Workspace</button>
         </form>
     </div>
 </div>
