@@ -614,6 +614,7 @@ td {
     position: sticky;
     top: 0;
     z-index: 40;
+    min-height: 60px;
 }
 
 .workspace-body {
@@ -632,6 +633,13 @@ td {
     flex-direction: column;
     gap: 1.25rem;
     color: #ffffff;
+
+    /* Sticky: sidebar tetap di tempat saat konten kanan di-scroll */
+    position: sticky;
+    top: 60px;                       /* tinggi navbar */
+    height: calc(100vh - 60px);
+    align-self: flex-start;          /* wajib agar sticky bekerja di dalam flex */
+    overflow-y: auto;
 }
 
 .ws-sidebar-section {
@@ -682,9 +690,10 @@ td {
 
 .workspace-content {
     flex: 1;
-    padding: 1.75rem 2rem;
-    max-width: 1200px;
     width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;                  /* konten berada di tengah area kanan */
+    padding: 1.75rem 2rem;
 }
 
 .daily-goal-form {
@@ -812,8 +821,34 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     .dashboard-content, .workspace-content { padding: 1.25rem 1rem; }
 
     .workspace-body { flex-direction: column; min-height: 0; }
-    .workspace-sidebar { width: 100%; padding: 1rem; }
+    .workspace-sidebar { width: 100%; padding: 1rem; position: static; height: auto; align-self: stretch; }
     .navbar { flex-wrap: wrap; gap: 0.5rem; }
 
     .form-row, .grid-2-col { grid-template-columns: 1fr; }
+}
+
+/* =========================================
+   Tombol "Kembali" di bagian bawah sidebar
+   ========================================= */
+.ws-back-btn {
+    margin-top: auto;                /* mendorong tombol ke dasar sidebar */
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.ws-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
 }
