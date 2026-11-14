@@ -934,3 +934,43 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 /* Tabel Pengaturan Anggota: kolom Peran & Aksi rata tengah */
 #memberSettingsTable th.col-center,
 #memberSettingsTable td.col-center { text-align: center; }
+
+/* ===== Fitur baru: filter, badge, ringkasan, riwayat ===== */
+.task-toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 0.9rem 1rem; }
+.task-toolbar input { flex: 1; min-width: 180px; padding: 0.55rem 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; background: #fafafa; }
+.task-toolbar select { width: auto; min-width: 140px; padding: 0.55rem 0.8rem; font-size: 0.85rem; }
+
+.nav-badge, .action-badge { display: inline-flex; align-items: center; justify-content: center; background: #dc2626; color: #fff; font-size: 0.7rem; font-weight: 700; border-radius: 999px; }
+.nav-badge { min-width: 1.25rem; height: 1.25rem; padding: 0 0.35rem; margin-left: auto; }
+.action-badge { padding: 0.15rem 0.6rem; }
+.tag-soon { display: inline-block; margin-left: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 600; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 999px; }
+
+.btn-sm.btn-ghost { background: var(--border-light); color: var(--text); border: 1px solid var(--border); }
+.btn-sm.btn-ghost:hover { background: var(--border); }
+
+.ws-sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+.ws-sidebar-bottom .ws-back-btn { margin-top: 0; }
+.ws-back-btn.danger:hover { background: rgba(220, 38, 38, 0.85); border-color: transparent; }
+
+.ws-settings-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.btn-danger-soft { color: var(--danger); border-color: var(--danger-border); background: var(--danger-bg); }
+.code-chip { font-family: monospace; letter-spacing: 2px; color: var(--primary); }
+
+.ws-stats { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+.stat { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--border-light); color: var(--text-muted); }
+.stat.s-progress { background: #dbeafe; color: #1e40af; }
+.stat.s-review { background: #f3e8ff; color: #6b21a8; }
+.stat.s-done { background: #dcfce7; color: #15803d; }
+.stat.s-late { background: #fee2e2; color: #991b1b; }
+.ws-members-progress { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.mini-progress { display: grid; grid-template-columns: 90px 1fr 36px; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-muted); }
+.mini-progress span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-progress .bar { height: 6px; background: var(--border-light); border-radius: 999px; overflow: hidden; }
+.mini-progress .bar i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
+
+.hist-item { border-left: 3px solid var(--border); padding: 0.4rem 0 0.4rem 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem; word-break: break-word; }
+.hist-item.hist-laporan { border-color: var(--primary); }
+.hist-item.hist-revisi { border-color: var(--warning); }
+.hist-item.hist-selesai { border-color: var(--success); }
+.hist-head { display: flex; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.2rem; }
+.hist-head span { color: var(--text-faint); font-size: 0.75rem; }
