@@ -297,22 +297,18 @@
 <div id="createWorkspaceModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" data-close="createWorkspaceModal">&times;</span>
-        <h2>Buat Workspace Baru</h2>
-        <p class="subtitle">Anda akan menjadi Mentor di workspace ini. Buat kode undangan (password) 6 karakter untuk dibagikan ke anggota.</p>
+        <h2>Buat Ruang Kerja Baru</h2>
+        <p class="subtitle">Anda akan menjadi Mentor di Ruang Kerja ini. Buat kode undangan (password) 6 karakter untuk dibagikan ke anggota.</p>
         <form id="createWorkspaceForm">
             <div class="form-group">
-                <label>Nama Workspace</label>
+                <label>Nama Ruang Kerja</label>
                 <input type="text" id="newWorkspaceName" required placeholder="Contoh: Tim Animasi SMKN 4">
             </div>
             <div class="form-group">
-                <label>Kode Undangan / Password Workspace (6 karakter)</label>
+                <label>Kode Undangan Ruang Kerja (6 karakter)</label>
                 <input type="text" id="newWorkspaceCode" required placeholder="Contoh: A1B2C3" maxlength="6" minlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;" pattern="[A-Za-z0-9]{6}" title="Harus 6 karakter huruf/angka">
             </div>
-            <div class="form-group">
-                <label>Tautan Google Drive (opsional)</label>
-                <input type="url" id="newWorkspaceDrive" placeholder="https://drive.google.com/drive/folders/...">
-            </div>
-            <button type="submit" class="btn-primary" id="createWorkspaceSubmitBtn">Buat Workspace</button>
+            <button type="submit" class="btn-primary" id="createWorkspaceSubmitBtn">Buat Ruang Kerja</button>
         </form>
     </div>
 </div>
@@ -321,14 +317,14 @@
 <div id="joinWorkspaceModal" class="modal hidden">
     <div class="modal-content">
         <span class="close-modal" data-close="joinWorkspaceModal">&times;</span>
-        <h2>Gabung Workspace</h2>
+        <h2>Gabung Ruang Kerja</h2>
         <p class="subtitle">Masukkan kode undangan dari Mentor Anda.</p>
         <form id="joinWorkspaceForm">
             <div class="form-group">
                 <label>Kode Undangan (6 karakter)</label>
                 <input type="text" id="joinCodeInput" required placeholder="Contoh: A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">
             </div>
-            <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Workspace</button>
+            <button type="submit" class="btn-primary" id="joinWorkspaceSubmitBtn">Gabung Ruang Kerja</button>
         </form>
     </div>
 </div>
