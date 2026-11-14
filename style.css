@@ -852,3 +852,67 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
 }
+
+/* =========================================
+   Tabel tugas: judul, deskripsi, tombol Drive
+   ========================================= */
+.task-title {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+}
+
+.task-desc-cell {
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.task-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    word-break: break-word;
+}
+
+.task-desc.empty {
+    color: var(--text-faint);
+    font-style: italic;
+}
+
+.task-revision {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+}
+
+.btn-drive {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-border);
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.btn-drive svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.btn-drive:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
