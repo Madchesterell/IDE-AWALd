@@ -148,10 +148,7 @@
 <div id="workspaceView" class="hidden">
     <header class="navbar">
         <div class="brand" style="display: flex; align-items: center; gap: 10px;">
-            <button type="button" id="backToDashboardBtn" class="btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.75rem;">← Kembali</button>
             <h1 id="workspaceTitle" style="font-size: 1.1rem;">Ruang Kerja</h1>
-            <span class="badge-capacity" id="workerCountDisplay">Anggota: 0 / 20</span>
-            <span class="badge-live" id="liveStatus">● Menghubungkan...</span>
         </div>
         <div class="role-controls" id="roleControls"></div>
     </header>
@@ -167,6 +164,9 @@
                     <span class="menu-icon">◎</span> Manajemen Divisi
                 </button>
             </div>
+            <button type="button" id="backToDashboardBtn" class="ws-back-btn">
+                <span class="menu-icon">←</span> Kembali ke Dashboard
+            </button>
         </aside>
 
         <!-- Konten kanan -->
