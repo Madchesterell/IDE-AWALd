@@ -97,7 +97,6 @@ function showDashboardView() {
   $('dashboardView').classList.remove('hidden');
   $('workspaceView').classList.add('hidden');
   
-  // Update profil di Topbar (Kanan Atas)
   const name = state.user?.displayName || state.user?.email || 'Pengguna';
   const roleText = 'Anggota';
   const initials = name.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
@@ -150,7 +149,6 @@ function showWorkspaceView() {
   $('mentorPanel').classList.toggle('hidden', !isMentor);
   $('mentorTaskCreator').classList.toggle('hidden', !isMentor);
   
-  // Tampilkan Target Harian hanya untuk worker di area utama
   const dailyGoalSection = $('dailyGoalSection');
   if (dailyGoalSection) dailyGoalSection.classList.toggle('hidden', isMentor);
   
@@ -444,9 +442,6 @@ function renderDivisionOptions() {
   selectDiv.innerHTML = '<option value="Umum">Umum</option>' + state.divisions.map(d => `<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
 }
 
-// ==========================================
-// RENDER TABEL TUGAS (INTERAKTIF & 4 STATUS)
-// ==========================================
 function renderTasks() {
   const tbody = $('taskTableBody');
   if (!tbody) return;
@@ -462,7 +457,6 @@ function renderTasks() {
   tbody.innerHTML = filteredTasks.map(task => {
     const isOverdue = task.endDate && new Date(task.endDate + 'T23:59:59') < new Date() && task.status !== 'done';
     
-    // Logika 4 Status & Integrasi Revisi
     let statusKey = task.status;
     let statusText = 'Belum Mulai';
     let statusClass = 's-todo';
@@ -484,7 +478,6 @@ function renderTasks() {
       statusClass = 's-done';
     }
 
-    // Pembatasan deskripsi
     const shortDesc = task.desc ? (task.desc.length > 60 ? task.desc.substring(0, 60) + '...' : task.desc) : '-';
 
     return `
@@ -505,9 +498,6 @@ function renderTasks() {
   }).join('');
 }
 
-// ==========================================
-// POP-UP CARD DETAIL TUGAS (BARU)
-// ==========================================
 window.openTaskDetailModal = (taskId) => {
   const task = state.tasks.find(t => t.id === taskId);
   if (!task) return;
@@ -517,7 +507,6 @@ window.openTaskDetailModal = (taskId) => {
   $('detailTaskDates').textContent = `📅 ${task.startDate || '?'} s/d ${task.endDate || '?'}`;
   $('detailTaskDesc').textContent = task.desc || 'Tidak ada deskripsi tambahan.';
   
-  // Status Badge di Modal
   let statusText = 'Belum Mulai';
   let statusClass = 's-todo';
   if (task.status === 'progress') { statusText = task.revisionNotes ? 'Revisi' : 'Berjalan'; statusClass = task.revisionNotes ? 's-review' : 's-progress'; }
@@ -527,18 +516,15 @@ window.openTaskDetailModal = (taskId) => {
   $('detailTaskStatus').className = `stat-pill ${statusClass}`;
   $('detailTaskStatus').textContent = statusText;
   
-  // Difficulty Badge
   const diff = (task.difficulty || 'sedang').toLowerCase();
   $('detailTaskDifficulty').className = `stat-pill diff-${diff}`;
   $('detailTaskDifficulty').textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
 
-  // Drive Link
   const driveHref = safeUrl(task.reportFileLink || (task.driveSource === 'workspace' ? state.driveLink : ''));
   $('detailTaskDrive').innerHTML = driveHref 
     ? `<a href="${escapeHtml(driveHref)}" target="_blank" style="color:var(--primary);text-decoration:underline;">🔗 Buka Tautan Drive</a>` 
     : '<span style="color:var(--text-faint);">Belum ada tautan</span>';
 
-  // Revision Notes
   const revBox = $('detailRevisionBox');
   if (task.revisionNotes) {
     revBox.classList.remove('hidden');
@@ -547,7 +533,6 @@ window.openTaskDetailModal = (taskId) => {
     revBox.classList.add('hidden');
   }
 
-  // History
   const histList = $('detailHistoryList');
   const history = task.history || [];
   if (history.length > 0) {
@@ -561,7 +546,6 @@ window.openTaskDetailModal = (taskId) => {
     histList.innerHTML = '<p class="empty-hint">Belum ada riwayat.</p>';
   }
 
-  // Action Buttons di dalam Modal
   const actionContainer = $('detailActionButtons');
   actionContainer.innerHTML = '';
   
@@ -602,7 +586,7 @@ window.openReviewModalFromDetail = (taskId, isRevision = false) => {
   closeTaskDetailModal();
   window.openReviewModal(taskId);
   if (isRevision) {
-    setTimeout(() => $('mentorReviewNotes').focus(), 100);
+    setTimeout(() => $('mentorReviewNotes')?.focus(), 100);
   }
 };
 
@@ -636,8 +620,8 @@ function renderDivisionManagement() {
           <div style="display:flex; align-items:center; gap:12px;">
             <span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">${countEmp} Anggota</span>
             <button class="btn-sm btn-warning" onclick="deleteDivision('${d.id}')" style="font-size:0.7rem;">Hapus</button>
-          </BAGIAN>
-        </div>`; // Note: Fixed typo in template string conceptually, ensuring valid HTML
+          </div>
+        </div>`;
       }).join('');
   }
   
@@ -772,16 +756,10 @@ window.openReportModal = (taskId) => {
   const container = $('reportDriveContainer');
   const subtitle = $('reportModalSubtitle');
   
-  // Simplified report modal logic for brevity, ensuring it works
   $('reportTaskId').value = taskId;
   subtitle.textContent = "Masukkan tautan Google Drive untuk bukti pekerjaan.";
   container.innerHTML = `<label for="reportDriveLink">Tautan File Google Drive</label><input type="url" id="reportDriveLink" class="form-control" placeholder="https://drive.google.com/..." required /><small style="color:var(--text-muted);">Tempelkan tautan file yang sudah diunggah.</small>`;
   
-  // Create a temporary modal for report if not using the main one, or reuse existing structure
-  // For this refactor, we assume standard modal behavior. 
-  // Note: In a full app, you'd toggle a specific report modal. Here we rely on the existing HTML structure if present, 
-  // but since we streamlined, let's use a prompt or inline logic if modal is missing. 
-  // To keep it robust with the provided HTML, we will use the existing reportModal if it exists, otherwise alert.
   if ($('reportModal')) {
      $('reportModal').classList.remove('hidden');
   } else {
@@ -797,10 +775,7 @@ window.openReportModal = (taskId) => {
 };
 
 window.openReviewModal = (taskId) => {
-  const isRevision = $('btnSendRevision') && $('btnSendRevision').dataset.mode === 'revision'; // Simplified check
-  
-  // Using prompt for simplicity in this streamlined version if modal complex, 
-  // but let's try to use the HTML modal if available.
+  const isRevision = $('btnSendRevision') && $('btnSendRevision').dataset.mode === 'revision';
   const notes = prompt(isRevision ? "Masukkan catatan revisi untuk pekerja:" : "Masukkan catatan validasi (opsional):");
   if (notes === null) return;
   
@@ -889,7 +864,7 @@ function setupEventListeners() {
     const startEl = $('startDate'), endEl = $('endDate');
     if (startEl && endEl && startEl.value) {
       endEl.min = startEl.value;
-      if (endEl.value && endEl.value < startEl.value) endEl.value = startEl value;
+      if (endEl.value && endEl.value < startEl.value) endEl.value = startEl.value;
     }
   }
   if ($('startDate')) $('startDate').addEventListener('change', syncEndDateMin);
