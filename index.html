@@ -8,12 +8,12 @@
 </head>
 <body>
 
-  <!-- ==================== AUTH VIEW ==================== -->
+  <!-- AUTH VIEW -->
   <div id="authView" class="auth-gate-modal auth-split">
     <div class="auth-hero">
       <div class="auth-glass">
         <h2>WorkSpace<span>Pro</span></h2>
-                <p>Platform manajemen tugas dan divisi untuk tim Anda. Pantau progres, bagikan tugas, dan kolaborasi dalam satu tempat.</p>
+        <p>Platform manajemen tugas dan divisi untuk tim Anda. Pantau progres, bagikan tugas, dan kolaborasi dalam satu tempat.</p>
       </div>
     </div>
     <div class="auth-panel">
@@ -42,7 +42,7 @@
             Masuk dengan Google
           </button>
           <div class="auth-footer">
-            <span>Belum punya akun?</span>
+            <span id="authToggleText">Belum punya akun?</span>
             <a href="#" id="authToggleLink">Daftar sekarang</a>
           </div>
         </form>
@@ -70,25 +70,18 @@
     </div>
   </div>
 
-  <!-- ==================== DASHBOARD VIEW ==================== -->
+  <!-- DASHBOARD VIEW -->
   <div id="dashboardView" class="dashboard-layout hidden">
     <aside class="sidebar">
-      <div class="sidebar-brand">
-        <h3>WorkSpace<span>Pro</span></h3>
-      </div>
-
+      <div class="sidebar-brand"><h3>WorkSpace<span>Pro</span></h3></div>
       <nav class="sidebar-menu">
         <button id="dashboardNavBtn" class="menu-item active"><span class="menu-icon">▦</span> Dashboard</button>
         <button id="myWorkspacesNavBtn" class="menu-item"><span class="menu-icon">▣</span> Ruang Kerja Saya</button>
         <button id="notificationsNavBtn" class="menu-item"><span class="menu-icon">♧</span> Notifikasi</button>
       </nav>
-
       <div class="sidebar-settings-section">
-        <button id="accountBtn" class="menu-item menu-item-settings">
-          <span class="menu-icon">⚙</span> Pengaturan Akun
-        </button>
+        <button id="accountBtn" class="menu-item menu-item-settings"><span class="menu-icon">⚙</span> Pengaturan Akun</button>
       </div>
-
       <div class="sidebar-footer">
         <button id="logoutBtn" class="btn-logout-sidebar">⎋ Keluar dari Akun</button>
       </div>
@@ -97,7 +90,6 @@
     <div class="main-content-wrapper">
       <header class="dashboard-topbar">
         <h1 id="dashboardPageTitle" class="topbar-title">Dashboard</h1>
-        <!-- Profil dipindahkan ke pojok kanan atas header -->
         <div class="topbar-profile-badge">
           <div class="avatar-circle" id="topbarUserAvatar">WP</div>
           <div class="user-info-text">
@@ -146,7 +138,7 @@
     </div>
   </div>
 
-  <!-- ==================== WORKSPACE VIEW ==================== -->
+  <!-- WORKSPACE VIEW -->
   <div id="workspaceView" class="hidden">
     <nav class="navbar">
       <div class="brand"><h1 id="workspaceTitle">Ruang Kerja</h1></div>
@@ -162,7 +154,6 @@
           <button id="tabTaskView" class="ws-nav-item active"><span>▦</span> <span id="tabTaskLabel">Tugas Saya</span></button>
           <button id="tabDivisionView" class="ws-nav-item hidden"><span>◎</span> Manajemen Divisi</button>
         </div>
-
         <div id="mentorPanel" class="ws-sidebar-section hidden">
           <div class="ws-sidebar-label">Pengaturan Mentor</div>
           <div class="ws-sidebar-bottom">
@@ -170,7 +161,6 @@
             <button id="deleteWorkspaceBtn" class="ws-nav-item danger">🗑 Hapus Ruang Kerja</button>
           </div>
         </div>
-
         <div class="ws-sidebar-section" style="margin-top:auto;">
           <button id="leaveWorkspaceBtn" class="ws-back-btn">⎋ Keluar dari Ruang Kerja</button>
           <button id="backToDashboardBtn" class="ws-back-btn">← Kembali ke Dashboard</button>
@@ -219,14 +209,8 @@
                 <div id="driveStatusText" class="status-text">Belum ada folder yang tertaut.</div>
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label for="startDate">Tanggal Mulai</label>
-                  <input type="date" id="startDate" />
-                </div>
-                <div class="form-group">
-                  <label for="endDate">Tenggat Waktu</label>
-                  <input type="date" id="endDate" />
-                </div>
+                <div class="form-group"><label for="startDate">Tanggal Mulai</label><input type="date" id="startDate" /></div>
+                <div class="form-group"><label for="endDate">Tenggat Waktu</label><input type="date" id="endDate" /></div>
               </div>
               <div class="form-group">
                 <label for="taskDesc">Instruksi & Kriteria</label>
@@ -236,7 +220,6 @@
             </form>
           </div>
 
-          <!-- TARGET HARIAN DIPINDAHKAN KE SINI (Atas Tabel) -->
           <div id="dailyGoalSection" class="card hidden" style="margin-bottom: 1.5rem;">
             <div class="section-header-title">
               <h3>🎯 Target Harian</h3>
@@ -265,11 +248,8 @@
                 <option value="sedang">Sedang</option>
                 <option value="tinggi">Tinggi</option>
               </select>
-              <select id="filterAssignee" class="hidden">
-                <option value="">Semua anggota</option>
-              </select>
+              <select id="filterAssignee" class="hidden"><option value="">Semua anggota</option></select>
             </div>
-
             <div style="overflow-x:auto;">
               <table id="taskTable">
                 <thead>
@@ -297,21 +277,12 @@
               <p class="subtitle">Kelola divisi dan lihat jumlah anggota di setiap divisi.</p>
             </div>
             <form id="createDivisionForm" class="form-row" style="margin-bottom:1rem;">
-              <div class="form-group">
-                <label for="newDivisionName">Nama Divisi *</label>
-                <input type="text" id="newDivisionName" required />
-              </div>
-              <div class="form-group">
-                <label for="newDivisionDesc">Deskripsi</label>
-                <input type="text" id="newDivisionDesc" />
-              </div>
-              <div style="display:flex;align-items:flex-end;">
-                <button type="submit" class="btn-primary">Buat Divisi</button>
-              </div>
+              <div class="form-group"><label for="newDivisionName">Nama Divisi *</label><input type="text" id="newDivisionName" required /></div>
+              <div class="form-group"><label for="newDivisionDesc">Deskripsi</label><input type="text" id="newDivisionDesc" /></div>
+              <div style="display:flex;align-items:flex-end;"><button type="submit" class="btn-primary">Buat Divisi</button></div>
             </form>
             <div id="divisionListContainer"><p class="empty-hint">Belum ada divisi terdaftar.</p></div>
           </div>
-
           <div class="card">
             <div class="section-header-title">
               <h3>Pengaturan Anggota</h3>
@@ -337,9 +308,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODALS ==================== -->
-  
-  <!-- TASK DETAIL POP-UP CARD (BARU) -->
+  <!-- MODALS -->
   <div id="taskDetailModal" class="modal hidden">
     <div class="modal-content modal-content-lg">
       <button class="close-modal" data-close="taskDetailModal">×</button>
@@ -349,7 +318,6 @@
         <span id="detailTaskDifficulty" class="stat-pill">Kesulitan</span>
         <span id="detailTaskDates" style="font-size:0.85rem; color:var(--text-muted); display:flex; align-items:center;">📅 Tanggal</span>
       </div>
-
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
         <div>
           <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Ditugaskan Kepada</label>
@@ -360,29 +328,22 @@
           <p id="detailTaskDrive" style="margin-top:0.25rem;">-</p>
         </div>
       </div>
-
       <div style="margin-bottom:1.5rem;">
         <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Deskripsi & Instruksi</label>
         <p id="detailTaskDesc" style="margin-top:0.25rem; line-height:1.6; color:var(--text); white-space:pre-wrap;">-</p>
       </div>
-
       <div id="detailRevisionBox" class="review-report-box hidden" style="margin-bottom:1.5rem;">
         <strong>⚠️ Catatan Revisi dari Mentor:</strong>
         <p id="detailRevisionNotes" style="margin-top:0.5rem;"></p>
       </div>
-
       <div id="detailHistoryBox" style="margin-bottom:1.5rem;">
         <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Riwayat Aktivitas</label>
         <div id="detailHistoryList" style="margin-top:0.5rem;"></div>
       </div>
-
-      <div id="detailActionButtons" style="display:flex; gap:0.75rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:1.5rem;">
-        <!-- Tombol aksi akan di-render di sini oleh JavaScript -->
-      </div>
+      <div id="detailActionButtons" style="display:flex; gap:0.75rem; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:1.5rem;"></div>
     </div>
   </div>
 
-  <!-- Create Workspace Modal -->
   <div id="createWorkspaceModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-modal" data-close="createWorkspaceModal">×</button>
@@ -396,7 +357,6 @@
     </div>
   </div>
 
-  <!-- Join Workspace Modal -->
   <div id="joinWorkspaceModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-modal" data-close="joinWorkspaceModal">×</button>
@@ -408,7 +368,6 @@
     </div>
   </div>
 
-  <!-- Account Modal -->
   <div id="accountModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-modal" data-close="accountModal">×</button>
@@ -421,7 +380,6 @@
     </div>
   </div>
 
-  <!-- Edit Member Modal -->
   <div id="editMemberModal" class="modal hidden">
     <div class="modal-content">
       <button class="close-modal" data-close="editMemberModal">×</button>
